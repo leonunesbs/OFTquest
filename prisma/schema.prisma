@@ -63,6 +63,10 @@ model User {
     accounts      Account[]
     sessions      Session[]
     posts         Post[]
+
+    playlists     Playlist[]
+    userFavorites UserFavorites[]
+    comments      Comment[]
 }
 
 model VerificationToken {
@@ -71,4 +75,65 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model Question {
+    id            String          @id @default(cuid())
+    year          Int
+    type          String
+    number        Int
+    topic         String
+    statement     String
+    options       Option[]
+    explanation   String
+    image         String? // Path to image, if any
+    comments      Comment[]
+    playlistItems PlaylistItem[]
+    userFavorites UserFavorites[]
+}
+
+model Option {
+    id         String   @id @default(cuid())
+    question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    questionId String
+    text       String?
+    image      String? // Path to image, if any
+    isCorrect  Boolean
+}
+
+model Playlist {
+    id        String         @id @default(cuid())
+    name      String
+    user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId    String
+    items     PlaylistItem[]
+    createdAt DateTime       @default(now())
+}
+
+model PlaylistItem {
+    id               String   @id @default(cuid())
+    playlist         Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+    playlistId       String
+    question         Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    questionId       String
+    selectedOptionId String? // ID of the selected option
+    respondedAt      DateTime @default(now())
+}
+
+model UserFavorites {
+    id         String   @id @default(cuid())
+    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId     String
+    question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    questionId String
+}
+
+model Comment {
+    id         String   @id @default(cuid())
+    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId     String
+    question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    questionId String
+    content    String
+    createdAt  DateTime @default(now())
 }
