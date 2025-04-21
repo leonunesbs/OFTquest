@@ -1,5 +1,9 @@
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
