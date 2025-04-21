@@ -8,9 +8,9 @@ import { notFound } from "next/navigation";
 export default async function EditQuestionPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const id = params.id;
+  const { id } = await params;
   const isEditing = id !== "new";
 
   // Buscar dados no servidor se estiver editando
