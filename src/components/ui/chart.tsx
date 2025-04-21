@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
 
+import type { Payload } from "recharts/types/component/DefaultTooltipContent";
 import { cn } from "~/lib/utils";
 
 // Format: { THEME_NAME: CSS_SELECTOR }
@@ -201,7 +202,13 @@ const ChartTooltipContent = React.forwardRef<
                 )}
               >
                 {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
+                  formatter(
+                    item.value,
+                    item.name,
+                    item,
+                    index,
+                    payload as Payload<number, string>[],
+                  )
                 ) : (
                   <>
                     {itemConfig?.icon ? (
