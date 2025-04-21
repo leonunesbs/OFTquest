@@ -65,9 +65,11 @@ model User {
     sessions      Session[]
     posts         Post[]
 
-    playlists     Playlist[]
-    userFavorites UserFavorites[]
-    comments      Comment[]
+    playlists           Playlist[]
+    userFavorites       UserFavorites[]
+    comments            Comment[]
+    topicInteraction    UserTopicInteraction[]
+    playlistPreferences UserPlaylistPreferences?
 }
 
 model VerificationToken {
@@ -92,6 +94,9 @@ model Question {
     comments      Comment[]
     playlistItems PlaylistItem[]
     userFavorites UserFavorites[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }
 
 model Option {
@@ -104,12 +109,25 @@ model Option {
 }
 
 model Playlist {
-    id        String         @id @default(cuid())
-    name      String
-    user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-    userId    String
-    items     PlaylistItem[]
-    createdAt DateTime       @default(now())
+    id             String          @id @default(cuid())
+    name           String
+    user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId         String
+    items          PlaylistItem[]
+    createdAt      DateTime        @default(now())
+    playlistMetric PlaylistMetric?
+}
+
+model PlaylistMetric {
+    id                String   @id @default(cuid())
+    playlist          Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+    playlistId        String   @unique
+    answeredQuestions Int // total de respondidas (ignora as não respondidas)
+    correctAnswers    Int
+    accuracy          Float // correctAnswers / answeredQuestions
+    metricsByTopic    Json // Ex: { "Catarata": { "correct": 3, "answered": 4 } }
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
 }
 
 model PlaylistItem {
@@ -138,4 +156,42 @@ model Comment {
     questionId String
     content    String
     createdAt  DateTime @default(now())
+}
+
+// Modelo para armazenar a prevalência dos temas
+model TopicPrevalence {
+    id         String   @id @default(cuid())
+    topic      String   @unique
+    examType   String? // Tipo de prova (se aplicável)
+    count      Int // Número de questões deste tema nos últimos 5 anos
+    prevalence Float // Valor calculado de prevalência (normalizado)
+    updatedAt  DateTime @updatedAt
+}
+
+// Modelo para rastrear interações do usuário com temas
+model UserTopicInteraction {
+    id             String   @id @default(cuid())
+    user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId         String
+    topic          String
+    lastSeenAt     DateTime
+    questionsCount Int // Total de questões respondidas deste tema
+    correctCount   Int // Total de respostas corretas neste tema
+    accuracy       Float // Taxa de acerto (correctCount / questionsCount)
+
+    @@unique([userId, topic])
+}
+
+// Adicionar campo para armazenar configurações de playlist do usuário
+model UserPlaylistPreferences {
+    id             String @id @default(cuid())
+    user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId         String @unique
+    topicsCount    Int    @default(5) // Quantidade padrão de temas
+    questionsCount Int    @default(20) // Quantidade padrão de questões
+
+    // Pesos para o algoritmo de ranking (opcionais, podem ser ajustados pelo usuário)
+    prevalenceWeight Float @default(0.4)
+    timeWeight       Float @default(0.3)
+    accuracyWeight   Float @default(0.3)
 }
