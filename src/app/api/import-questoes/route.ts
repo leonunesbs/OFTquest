@@ -11,7 +11,7 @@ export async function POST() {
   try {
     // Buscar questoes.json via HTTP (fetch)
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/questoes.json`,
+      `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://oftquest.vercel.app"}/questoes.json`,
     );
 
     if (!response.ok) {
