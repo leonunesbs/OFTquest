@@ -27,10 +27,11 @@ function getSearchParams(
 export default async function QuestionsPage({
   searchParams,
 }: {
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { page, limit, search, topic, year, type } =
-    getSearchParams(searchParams);
+  const { page, limit, search, topic, year, type } = getSearchParams(
+    await searchParams,
+  );
 
   // Construir a query com os filtros
   const where: Prisma.QuestionWhereInput = {};
