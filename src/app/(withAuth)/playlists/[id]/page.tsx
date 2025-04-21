@@ -1,6 +1,6 @@
-import { api } from "~/trpc/server";
 // src/app/playlists/[id]/page.tsx
 import { redirect } from "next/navigation";
+import { api } from "~/trpc/server";
 
 export default async function PlaylistIndexPage({
   params,
