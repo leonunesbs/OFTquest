@@ -1,13 +1,14 @@
+import { api } from "~/trpc/server";
 // src/app/playlists/[id]/page.tsx
 import { redirect } from "next/navigation";
-import { api } from "~/trpc/server";
 
 export default async function PlaylistIndexPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const playlist = await api.playlist.getById({ id: params.id });
+  const { id } = await params;
+  const playlist = await api.playlist.getById({ id });
 
   if (!playlist?.items.length) {
     // Se não existir ou sem itens, redireciona de volta à lista
@@ -15,5 +16,5 @@ export default async function PlaylistIndexPage({
   }
 
   // Redireciona para a primeira questão assim que carregar no servidor
-  redirect(`/playlists/${params.id}/${playlist.items[0]?.id}`);
+  redirect(`/playlists/${id}/${playlist.items[0]?.id}`);
 }
