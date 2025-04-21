@@ -46,7 +46,7 @@ export default function PlaylistItemPage() {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
   const answerMutation = api.playlist.answerQuestion.useMutation({
-    onSuccess({ playlistItem, isCorrect }) {
+    onSuccess({ isCorrect }) {
       setIsCorrect(isCorrect);
       setAnswered(true);
 
