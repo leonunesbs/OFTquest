@@ -72,38 +72,40 @@ export default function DashboardClient() {
   const { data, isLoading } = api.playlist.getUserTopicMetrics.useQuery({
     period,
   });
-  const metrics = useMemo(() => data ?? [], [data]);
+
+  // Debug logs
+
+  const metrics = useMemo(() => {
+    return data ?? [];
+  }, [data]);
 
   // **2. useMemo sempre chamado**
-  const accuracyData = useMemo(
-    () =>
-      metrics
-        .filter((m) => m.questionsCount > 0)
-        .map((m) => ({ topic: m.topic, value: Math.round(m.accuracy * 100) }))
-        .sort((a, b) => a.value - b.value),
-    [metrics],
-  );
+  const accuracyData = useMemo(() => {
+    const filtered = metrics
+      .filter((m) => m.questionsCount > 0)
+      .map((m) => ({ topic: m.topic, value: Math.round(m.accuracy * 100) }))
+      .sort((a, b) => a.value - b.value);
+    return filtered;
+  }, [metrics]);
 
-  const prevalenceData = useMemo(
-    () =>
-      metrics
-        .map((m) => ({ topic: m.topic, value: Math.round(m.prevalence * 100) }))
-        .sort((a, b) => b.value - a.value),
-    [metrics],
-  );
+  const prevalenceData = useMemo(() => {
+    const filtered = metrics
+      .map((m) => ({ topic: m.topic, value: Math.round(m.prevalence * 100) }))
+      .sort((a, b) => b.value - a.value);
+    return filtered;
+  }, [metrics]);
 
-  const activityData = useMemo(
-    () =>
-      metrics
-        .filter((m) => m.questionsCount > 0)
-        .map((m) => ({
-          topic: m.topic,
-          responded: m.questionsCount,
-          correct: m.correctCount,
-        }))
-        .sort((a, b) => b.responded - a.responded),
-    [metrics],
-  );
+  const activityData = useMemo(() => {
+    const filtered = metrics
+      .filter((m) => m.questionsCount > 0)
+      .map((m) => ({
+        topic: m.topic,
+        responded: m.questionsCount,
+        correct: m.correctCount,
+      }))
+      .sort((a, b) => b.responded - a.responded);
+    return filtered;
+  }, [metrics]);
 
   // **3. Early returns (após hooks)**
   if (isLoading) {
@@ -165,30 +167,51 @@ export default function DashboardClient() {
           </SelectContent>
         </Select>
       </div>
-      <Tabs>
+
+      <Tabs value={activeTab}>
         <TabsContent value="accuracy">
           <ChartCard
             title="Taxa de Acertos por Tema"
             description="Seu desempenho percentual em cada tema."
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={accuracyData}
-                layout="vertical"
-                margin={{ left: 80 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" domain={[0, 100]} unit="%" />
-                <YAxis dataKey="topic" type="category" width={120} />
-                <Tooltip formatter={(val: number) => `${val}%`} />
-                <Legend />
-                <Bar dataKey="value" name="Acertos (%)" fill={COLORS[0]}>
-                  {accuracyData.map((_, idx) => (
-                    <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {accuracyData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={accuracyData}
+                  layout="vertical"
+                  margin={{ top: 20, right: 30, left: 80, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" domain={[0, 100]} unit="%" />
+                  <YAxis
+                    dataKey="topic"
+                    type="category"
+                    width={120}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip
+                    formatter={(val: number) => `${val}%`}
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px",
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="value" name="Acertos (%)" fill={COLORS[0]}>
+                    {accuracyData.map((_, idx) => (
+                      <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-muted-foreground">
+                  Nenhum dado disponível para exibição
+                </p>
+              </div>
+            )}
           </ChartCard>
         </TabsContent>
 
@@ -197,25 +220,40 @@ export default function DashboardClient() {
             title="Prevalência de Temas"
             description="Percentual de ocorrência dos temas nas provas."
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={prevalenceData}
-                  dataKey="value"
-                  nameKey="topic"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={120}
-                  // removido 'label' para evitar template literal error
-                >
-                  {prevalenceData.map((_, idx) => (
-                    <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(val: number) => `${val}%`} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            {prevalenceData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={prevalenceData}
+                    dataKey="value"
+                    nameKey="topic"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={120}
+                    label={({ name, value }) => `${name}: ${value}%`}
+                  >
+                    {prevalenceData.map((_, idx) => (
+                      <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(val: number) => `${val}%`}
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px",
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-muted-foreground">
+                  Nenhum dado disponível para exibição
+                </p>
+              </div>
+            )}
           </ChartCard>
         </TabsContent>
 
@@ -224,21 +262,44 @@ export default function DashboardClient() {
             title="Atividade por Tema"
             description="Quantidade de questões respondidas e corretas."
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={activityData}
-                layout="vertical"
-                margin={{ left: 80 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="topic" type="category" width={120} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="responded" name="Respondidas" fill={COLORS[1]} />
-                <Bar dataKey="correct" name="Corretas" fill={COLORS[2]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {activityData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={activityData}
+                  layout="vertical"
+                  margin={{ top: 20, right: 30, left: 80, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis
+                    dataKey="topic"
+                    type="category"
+                    width={120}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px",
+                    }}
+                  />
+                  <Legend />
+                  <Bar
+                    dataKey="responded"
+                    name="Respondidas"
+                    fill={COLORS[1]}
+                  />
+                  <Bar dataKey="correct" name="Corretas" fill={COLORS[2]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-muted-foreground">
+                  Nenhum dado disponível para exibição
+                </p>
+              </div>
+            )}
           </ChartCard>
         </TabsContent>
       </Tabs>

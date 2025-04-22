@@ -108,53 +108,100 @@ export const playlistRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id;
-      const currentYear = new Date().getFullYear();
-      const yearsAgo = parseInt(input.period);
+      try {
+        const userId = ctx.session.user.id;
+        const currentYear = new Date().getFullYear();
+        const yearsAgo = parseInt(input.period);
 
-      // Get user's topic interactions
-      const topicInteractions = await ctx.db.userTopicInteraction.findMany({
-        where: { userId },
-      });
+        // Get user's topic interactions
+        const topicInteractions = await ctx.db.userTopicInteraction.findMany({
+          where: { userId },
+        });
 
-      // Get topic prevalences for the selected period
-      const topicPrevalences = await ctx.db.topicPrevalence.findMany({
-        where: {
-          year: {
-            gte: currentYear - yearsAgo,
-          },
-          examType: input.examType,
-        },
-      });
-
-      // Calculate average prevalence for each topic
-      const topicPrevalenceMap = topicPrevalences.reduce(
-        (acc, tp) => {
-          const current = acc[tp.topic] ?? { sum: 0, count: 0 };
-          return {
-            ...acc,
-            [tp.topic]: {
-              sum: current.sum + tp.prevalence,
-              count: current.count + 1,
+        // Get topic prevalences for the selected period
+        const topicPrevalences = await ctx.db.topicPrevalence.findMany({
+          where: {
+            year: {
+              gte: currentYear - yearsAgo,
             },
-          };
-        },
-        {} as Record<string, { sum: number; count: number }>,
-      );
+            examType: input.examType,
+          },
+        });
 
-      return topicInteractions.map((ti) => {
-        const topicPrevalence = topicPrevalenceMap[ti.topic];
-        return {
-          topic: ti.topic,
-          accuracy: ti.accuracy,
-          questionsCount: ti.questionsCount,
-          correctCount: ti.correctCount,
-          lastSeenAt: ti.lastSeenAt,
-          prevalence: topicPrevalence
-            ? topicPrevalence.sum / topicPrevalence.count
-            : 0,
-        };
-      });
+        // Se não houver prevalências para o tipo de prova selecionado,
+        // buscar todas as prevalências e calcular a média ponderada
+        if (topicPrevalences.length === 0 && input.examType) {
+          const allPrevalences = await ctx.db.topicPrevalence.findMany({
+            where: {
+              year: {
+                gte: currentYear - yearsAgo,
+              },
+            },
+          });
+
+          // Agrupar por tema e calcular a média ponderada por tipo de prova
+          const prevalenceByTopic = allPrevalences.reduce(
+            (acc, tp) => {
+              const current = acc[tp.topic] ?? { sum: 0, totalCount: 0 };
+              return {
+                ...acc,
+                [tp.topic]: {
+                  sum: current.sum + tp.prevalence * tp.count,
+                  totalCount: current.totalCount + tp.count,
+                },
+              };
+            },
+            {} as Record<string, { sum: number; totalCount: number }>,
+          );
+
+          // Calcular prevalência normalizada para cada tema
+          topicPrevalences.push(
+            ...Object.entries(prevalenceByTopic).map(([topic, data]) => ({
+              id: "",
+              topic,
+              examType: input.examType!,
+              year: currentYear,
+              count: data.totalCount,
+              prevalence: data.totalCount > 0 ? data.sum / data.totalCount : 0,
+              updatedAt: new Date(),
+            })),
+          );
+        }
+
+        // Calculate average prevalence for each topic
+        const topicPrevalenceMap = topicPrevalences.reduce(
+          (acc, tp) => {
+            const current = acc[tp.topic] ?? { sum: 0, count: 0 };
+            return {
+              ...acc,
+              [tp.topic]: {
+                sum: current.sum + tp.prevalence,
+                count: current.count + 1,
+              },
+            };
+          },
+          {} as Record<string, { sum: number; count: number }>,
+        );
+
+        const result = topicInteractions.map((ti) => {
+          const topicPrevalence = topicPrevalenceMap[ti.topic];
+          return {
+            topic: ti.topic,
+            accuracy: ti.accuracy || 0,
+            questionsCount: ti.questionsCount || 0,
+            correctCount: ti.correctCount || 0,
+            lastSeenAt: ti.lastSeenAt,
+            prevalence: topicPrevalence
+              ? topicPrevalence.sum / topicPrevalence.count
+              : 0,
+          };
+        });
+
+        return result;
+      } catch (error) {
+        console.error("Error in getUserTopicMetrics:", error);
+        throw error;
+      }
     }),
 });
 
