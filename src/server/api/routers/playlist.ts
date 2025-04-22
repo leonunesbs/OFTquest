@@ -2,7 +2,6 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 // src/server/api/routers/playlist.ts
 import {
   generatePlaylist,
-  updateTopicPrevalence,
   updateUserTopicInteraction,
 } from "../../services/playlistService";
 
@@ -40,9 +39,6 @@ export const playlistRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-
-      // Sempre atualiza prevalências antes de gerar
-      await updateTopicPrevalence();
 
       // Passa também os anos para o serviço
       const questions = await generatePlaylist(
@@ -104,22 +100,40 @@ export const playlistRouter = createTRPCRouter({
     }),
 
   // Obter métricas do usuário por tema
-  getUserTopicMetrics: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id;
-    const topicInteractions = await ctx.db.userTopicInteraction.findMany({
-      where: { userId },
-    });
-    const topicPrevalences = await ctx.db.topicPrevalence.findMany();
-    return topicInteractions.map((ti) => ({
-      topic: ti.topic,
-      accuracy: ti.accuracy,
-      questionsCount: ti.questionsCount,
-      correctCount: ti.correctCount,
-      lastSeenAt: ti.lastSeenAt,
-      prevalence:
-        topicPrevalences.find((tp) => tp.topic === ti.topic)?.prevalence ?? 0,
-    }));
-  }),
+  getUserTopicMetrics: protectedProcedure
+    .input(
+      z.object({
+        period: z.enum(["1A", "2A", "3A", "5A"]).default("5A"),
+        examType: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      const currentYear = new Date().getFullYear();
+
+      const topicInteractions = await ctx.db.userTopicInteraction.findMany({
+        where: { userId },
+      });
+
+      const topicPrevalences = await ctx.db.topicPrevalence.findMany({
+        where: {
+          year: {
+            gte: currentYear - parseInt(input.period),
+          },
+          examType: input.examType,
+        },
+      });
+
+      return topicInteractions.map((ti) => ({
+        topic: ti.topic,
+        accuracy: ti.accuracy,
+        questionsCount: ti.questionsCount,
+        correctCount: ti.correctCount,
+        lastSeenAt: ti.lastSeenAt,
+        prevalence:
+          topicPrevalences.find((tp) => tp.topic === ti.topic)?.prevalence ?? 0,
+      }));
+    }),
 });
 
 // Atualiza métricas da playlist

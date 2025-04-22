@@ -34,7 +34,8 @@ export async function generatePlaylist(
     topicPrevalences = topicCounts.map((tc) => ({
       id: "",
       topic: tc.topic,
-      examType: null,
+      examType: "CBO", // Set default exam type
+      year: 2024, // Add required year field
       count: tc._count.id,
       prevalence: tc._count.id / totalCount,
       updatedAt: new Date(),
@@ -169,36 +170,79 @@ export async function updateUserTopicInteraction(
 }
 
 /**
- * Atualiza a prevalência dos temas com base nas questões dos últimos 5 anos.
+ * Atualiza a prevalência dos temas com base no período especificado.
  */
-export async function updateTopicPrevalence(): Promise<void> {
-  const fiveYearsAgo = new Date();
-  fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+export async function updateTopicPrevalence(
+  period: "1A" | "2A" | "3A" | "5A" = "5A",
+): Promise<void> {
+  const currentYear = new Date().getFullYear();
+  const yearsAgo = parseInt(period);
+  const startYear = currentYear - yearsAgo;
 
-  const topicCounts = await db.question.groupBy({
-    by: ["topic"],
-    where: { year: { gte: fiveYearsAgo.getFullYear() } },
-    _count: { id: true },
+  // Buscar todas as questões do período
+  const questions = await db.question.findMany({
+    where: {
+      year: {
+        gte: startYear,
+      },
+    },
+    select: {
+      id: true,
+      topic: true,
+      type: true,
+      year: true,
+    },
   });
 
-  const totalQuestions =
-    topicCounts.reduce((sum, tc) => sum + tc._count.id, 0) || 1;
+  // Agrupar por tipo de prova
+  const examTypes = [...new Set(questions.map((q) => q.type))];
 
-  for (const tc of topicCounts) {
-    await db.topicPrevalence.upsert({
-      where: { topic: tc.topic },
-      update: {
-        count: tc._count.id,
-        prevalence: tc._count.id / totalQuestions,
-        updatedAt: new Date(),
+  for (const examType of examTypes) {
+    // Filtrar questões do tipo específico
+    const typeQuestions = questions.filter((q) => q.type === examType);
+
+    // Calcular total de questões por tipo
+    const totalQuestions = typeQuestions.length;
+    if (totalQuestions === 0) continue;
+
+    // Agrupar por tema e contar ocorrências
+    const topicCounts = typeQuestions.reduce(
+      (acc, q) => {
+        if (!acc[q.topic]) {
+          acc[q.topic] = 0;
+        }
+        acc[q.topic] = (acc[q.topic] ?? 0) + 1;
+        return acc;
       },
-      create: {
-        topic: tc.topic,
-        examType: null,
-        count: tc._count.id,
-        prevalence: tc._count.id / totalQuestions,
-        updatedAt: new Date(),
-      },
-    });
+      {} as Record<string, number>,
+    );
+
+    // Calcular e salvar prevalência para cada tema
+    for (const [topic, count] of Object.entries(topicCounts)) {
+      const prevalence = count / totalQuestions;
+
+      await db.topicPrevalence.upsert({
+        where: {
+          topic_examType_year: {
+            topic,
+            examType,
+            year: currentYear,
+          },
+        },
+        update: {
+          count,
+          prevalence,
+          updatedAt: new Date(),
+        },
+        create: {
+          topic,
+          examType,
+          year: currentYear,
+          count,
+          prevalence,
+          updatedAt: new Date(),
+        },
+      });
+    }
   }
 }

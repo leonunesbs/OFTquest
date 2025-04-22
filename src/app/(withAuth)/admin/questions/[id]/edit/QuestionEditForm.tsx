@@ -238,13 +238,11 @@ export default function QuestionEditForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Prova Teórica">
-                          Prova Teórica
+                        <SelectItem value="teorica-1">Teórica 1</SelectItem>
+                        <SelectItem value="teorica-2">Teórica 2</SelectItem>
+                        <SelectItem value="teorico-pratica">
+                          Teórico prática
                         </SelectItem>
-                        <SelectItem value="Prova Prática">
-                          Prova Prática
-                        </SelectItem>
-                        <SelectItem value="Simulado">Simulado</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

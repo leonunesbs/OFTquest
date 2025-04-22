@@ -14,7 +14,6 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { type Prisma } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
@@ -53,7 +52,6 @@ export default function PlaylistItem({
   currentItem,
   currentIndex,
 }: PlaylistItemProps) {
-  const router = useRouter();
   const { toast } = useToast();
 
   // State for answer
@@ -95,11 +93,6 @@ export default function PlaylistItem({
   const q = currentItem.question;
   const progress = ((currentIndex + 1) / items.length) * 100;
   const answeredCount = items.filter((it) => it.selectedOptionId).length;
-
-  const navigateTo = (idx: number) => {
-    const next = items[idx];
-    if (next) router.replace(`/playlists/${playlist.id}/${next.id}`);
-  };
 
   const confirmAnswer = () => {
     if (selectedOption && !answered) {
@@ -222,16 +215,22 @@ export default function PlaylistItem({
         </CardContent>
         <CardFooter className="flex flex-col justify-between gap-4 sm:flex-row">
           <div className="flex gap-2">
-            <Button
-              onClick={() => navigateTo(currentIndex - 1)}
-              disabled={currentIndex <= 0}
-              variant="outline"
+            <Link
+              href={`/playlists/${playlist.id}/${items[currentIndex - 1]?.id}`}
+              passHref
             >
-              <ChevronLeft className="mr-2" /> Anterior
-            </Button>
-            <Button onClick={() => navigateTo(currentIndex + 1)}>
-              Próxima <ChevronRight className="ml-2" />
-            </Button>
+              <Button disabled={currentIndex <= 0} variant="outline">
+                <ChevronLeft className="mr-2" /> Anterior
+              </Button>
+            </Link>
+            <Link
+              href={`/playlists/${playlist.id}/${items[currentIndex + 1]?.id}`}
+              passHref
+            >
+              <Button disabled={currentIndex >= items.length - 1}>
+                Próxima <ChevronRight className="ml-2" />
+              </Button>
+            </Link>
           </div>
           <div className="space-x-2">
             <Button
@@ -241,12 +240,12 @@ export default function PlaylistItem({
               Confirmar
             </Button>
 
-            <Link href={`/playlists/${playlist.id}/results`}>
+            <Link href={`/playlists/${playlist.id}/results`} passHref>
               <Button variant="outline" disabled={answeredCount === 0}>
                 Finalizar
               </Button>
             </Link>
-            <Link href={`/admin/questions/${q.id}`}>
+            <Link href={`/admin/questions/${q.id}`} passHref>
               <Button variant="outline">Ver no Admin</Button>
             </Link>
           </div>

@@ -124,7 +124,11 @@ export default function QuestionsFilter({
             <SelectItem value="0">Todos os tipos</SelectItem>
             {types.map((t) => (
               <SelectItem key={t} value={t}>
-                {t}
+                {t === "teorica-1"
+                  ? "Teórica 1"
+                  : t === "teorica-2"
+                    ? "Teórica 2"
+                    : "Teórico prática"}
               </SelectItem>
             ))}
           </SelectContent>

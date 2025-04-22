@@ -144,7 +144,13 @@ export default function QuestionsTable({
               questions.map((question) => (
                 <TableRow key={question.id}>
                   <TableCell>{question.year}</TableCell>
-                  <TableCell>{question.type}</TableCell>
+                  <TableCell>
+                    {question.type === "teorica-1"
+                      ? "Teórica 1"
+                      : question.type === "teorica-2"
+                        ? "Teórica 2"
+                        : "Teórico prática"}
+                  </TableCell>
                   <TableCell>{question.number}</TableCell>
                   <TableCell>
                     <div>

@@ -1,8 +1,5 @@
-import { type Option, PrismaClient } from "@prisma/client";
-
 import { NextResponse } from "next/server";
-
-const prisma = new PrismaClient();
+import { db } from "~/server/db";
 
 interface QuestionOption {
   text: string;
@@ -21,6 +18,8 @@ interface ImportQuestion {
   image: string | null;
 }
 
+const CHUNK_SIZE = 50; // Process questions in chunks of 50
+
 export async function POST() {
   try {
     // Buscar questoes.json via HTTP (fetch)
@@ -35,64 +34,82 @@ export async function POST() {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const questions: ImportQuestion[] = await response.json();
 
-    // Inserir todas as questões e opções em uma única transação
-    try {
-      await prisma.$transaction(
-        async (tx) => {
-          // Criar todas as questões de uma vez
-          const questionsData = questions.map((q) => ({
-            year: q.year,
-            type: q.type,
-            number: q.number,
-            topic: q.topic ?? "",
-            statement: q.statement,
-            explanation: q.explanation ?? "",
-            image: q.image ?? "",
-          }));
+    // Generate TopicPrevalences after all questions are imported
+    await db.$transaction(
+      async (tx) => {
+        // Get all unique combinations of year, type, and topic
+        const topicStats = await tx.question.groupBy({
+          by: ["year", "type", "topic"],
+          _count: true,
+        });
 
-          const createdQuestions = await tx.question.createMany({
-            data: questionsData,
-            skipDuplicates: true,
-          });
+        // Calculate total questions per year and type
+        const yearTypeTotals = await tx.question.groupBy({
+          by: ["year", "type"],
+          _count: true,
+        });
 
-          // Buscar os IDs das questões criadas
-          const questionIds = await tx.question.findMany({
-            select: { id: true },
-            orderBy: { id: "desc" },
-            take: createdQuestions.count,
-          });
+        // Create a map for quick lookup of total questions per year and type
+        const yearTypeTotalMap = new Map(
+          yearTypeTotals.map(({ year, type, _count }) => [
+            `${year}-${type}`,
+            _count,
+          ]),
+        );
 
-          // Criar todas as opções de uma vez
-          const allOptions: Omit<Option, "id">[] = questions.flatMap(
-            (q, index) =>
-              q.options.map((opt) => ({
-                questionId: questionIds[index]?.id ?? "",
-                text: opt.text,
-                image: opt.image,
-                isCorrect: opt.isCorrect,
-              })),
-          );
+        // Prepare TopicPrevalence data
+        const prevalenceData = topicStats.map(
+          ({ year, type, topic, _count }) => {
+            const totalQuestions = yearTypeTotalMap.get(`${year}-${type}`) ?? 0;
+            const prevalence = totalQuestions > 0 ? _count / totalQuestions : 0;
 
-          await tx.option.createMany({
-            data: allOptions,
-            skipDuplicates: true,
-          });
-        },
-        {
-          timeout: 5 * 60000, // 5 minutos de timeout
-          maxWait: 5 * 60000, // 5 minutos de espera máxima
-        },
-      );
-    } catch (transactionError) {
-      console.error("Erro na transação:", transactionError);
-      throw new Error("Falha na transação de importação");
-    }
+            return {
+              topic,
+              examType: type,
+              year,
+              count: _count,
+              prevalence,
+            };
+          },
+        );
+
+        // Upsert TopicPrevalence records
+        await Promise.all(
+          prevalenceData.map((data) =>
+            tx.topicPrevalence.upsert({
+              where: {
+                topic_examType_year: {
+                  topic: data.topic,
+                  examType: data.examType,
+                  year: data.year,
+                },
+              },
+              update: {
+                count: data.count,
+                prevalence: data.prevalence,
+              },
+              create: {
+                topic: data.topic,
+                examType: data.examType,
+                year: data.year,
+                count: data.count,
+                prevalence: data.prevalence,
+              },
+            }),
+          ),
+        );
+      },
+      {
+        timeout: 5 * 60 * 1000, // 5 minutes timeout per chunk
+        maxWait: 5 * 60 * 1000, // 5 minutes max wait per chunk
+      },
+    );
 
     return NextResponse.json({ message: "Importação concluída com sucesso!" });
   } catch (error) {
     console.error("Erro ao importar questões:", error);
     return NextResponse.json({ error: "Falha na importação" }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
+    await db.$disconnect();
   }
 }

@@ -22,6 +22,13 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 import { Skeleton } from "~/components/ui/skeleton";
@@ -61,7 +68,10 @@ export default function DashboardClient() {
   const [activeTab, setActiveTab] = useState<
     "accuracy" | "prevalence" | "activity"
   >("accuracy");
-  const { data, isLoading } = api.playlist.getUserTopicMetrics.useQuery();
+  const [period, setPeriod] = useState<"1A" | "2A" | "3A" | "5A">("5A");
+  const { data, isLoading } = api.playlist.getUserTopicMetrics.useQuery({
+    period,
+  });
   const metrics = useMemo(() => data ?? [], [data]);
 
   // **2. useMemo sempre chamado**
@@ -124,94 +134,114 @@ export default function DashboardClient() {
 
   // **4. Renderização dos gráficos em tabs**
   return (
-    <Tabs
-      value={activeTab}
-      onValueChange={(v) =>
-        setActiveTab(v as "accuracy" | "prevalence" | "activity")
-      }
-      defaultValue="accuracy"
-    >
-      <TabsList className="mb-6 grid grid-cols-3 gap-2">
-        <TabsTrigger value="accuracy">Taxa de Acertos</TabsTrigger>
-        <TabsTrigger value="prevalence">Prevalência</TabsTrigger>
-        <TabsTrigger value="activity">Atividade</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="accuracy">
-        <ChartCard
-          title="Taxa de Acertos por Tema"
-          description="Seu desempenho percentual em cada tema."
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) =>
+            setActiveTab(v as "accuracy" | "prevalence" | "activity")
+          }
+          defaultValue="accuracy"
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={accuracyData}
-              layout="vertical"
-              margin={{ left: 80 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" domain={[0, 100]} unit="%" />
-              <YAxis dataKey="topic" type="category" width={120} />
-              <Tooltip formatter={(val: number) => `${val}%`} />
-              <Legend />
-              <Bar dataKey="value" name="Acertos (%)" fill={COLORS[0]}>
-                {accuracyData.map((_, idx) => (
-                  <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </TabsContent>
+          <TabsList className="grid grid-cols-3 gap-2">
+            <TabsTrigger value="accuracy">Taxa de Acertos</TabsTrigger>
+            <TabsTrigger value="prevalence">Prevalência</TabsTrigger>
+            <TabsTrigger value="activity">Atividade</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-      <TabsContent value="prevalence">
-        <ChartCard
-          title="Prevalência de Temas"
-          description="Percentual de ocorrência dos temas nas provas."
+        <Select
+          value={period}
+          onValueChange={(v) => setPeriod(v as "1A" | "2A" | "3A" | "5A")}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={prevalenceData}
-                dataKey="value"
-                nameKey="topic"
-                cx="50%"
-                cy="50%"
-                outerRadius={120}
-                // removido 'label' para evitar template literal error
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Período" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1A">Último ano</SelectItem>
+            <SelectItem value="2A">Últimos 2 anos</SelectItem>
+            <SelectItem value="3A">Últimos 3 anos</SelectItem>
+            <SelectItem value="5A">Últimos 5 anos</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <Tabs>
+        <TabsContent value="accuracy">
+          <ChartCard
+            title="Taxa de Acertos por Tema"
+            description="Seu desempenho percentual em cada tema."
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={accuracyData}
+                layout="vertical"
+                margin={{ left: 80 }}
               >
-                {prevalenceData.map((_, idx) => (
-                  <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(val: number) => `${val}%`} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </TabsContent>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" domain={[0, 100]} unit="%" />
+                <YAxis dataKey="topic" type="category" width={120} />
+                <Tooltip formatter={(val: number) => `${val}%`} />
+                <Legend />
+                <Bar dataKey="value" name="Acertos (%)" fill={COLORS[0]}>
+                  {accuracyData.map((_, idx) => (
+                    <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </TabsContent>
 
-      <TabsContent value="activity">
-        <ChartCard
-          title="Atividade por Tema"
-          description="Quantidade de questões respondidas e corretas."
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={activityData}
-              layout="vertical"
-              margin={{ left: 80 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="topic" type="category" width={120} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="responded" name="Respondidas" fill={COLORS[1]} />
-              <Bar dataKey="correct" name="Corretas" fill={COLORS[2]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="prevalence">
+          <ChartCard
+            title="Prevalência de Temas"
+            description="Percentual de ocorrência dos temas nas provas."
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={prevalenceData}
+                  dataKey="value"
+                  nameKey="topic"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={120}
+                  // removido 'label' para evitar template literal error
+                >
+                  {prevalenceData.map((_, idx) => (
+                    <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(val: number) => `${val}%`} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <ChartCard
+            title="Atividade por Tema"
+            description="Quantidade de questões respondidas e corretas."
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={activityData}
+                layout="vertical"
+                margin={{ left: 80 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="topic" type="category" width={120} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="responded" name="Respondidas" fill={COLORS[1]} />
+                <Bar dataKey="correct" name="Corretas" fill={COLORS[2]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

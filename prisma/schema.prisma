@@ -149,11 +149,14 @@ model Comment {
 // Modelo para armazenar a prevalência dos temas
 model TopicPrevalence {
     id         String   @id @default(cuid())
-    topic      String   @unique
-    examType   String? // Tipo de prova (se aplicável)
-    count      Int // Número de questões deste tema nos últimos 5 anos
+    topic      String
+    examType   String // Tipo de prova (teorica-1, teorica-2, teorico-pratica)
+    year       Int // Ano da prova
+    count      Int // Número de questões deste tema no período
     prevalence Float // Valor calculado de prevalência (normalizado)
     updatedAt  DateTime @updatedAt
+
+    @@unique([topic, examType, year], name: "topic_examType_year")
 }
 
 // Modelo para rastrear interações do usuário com temas
