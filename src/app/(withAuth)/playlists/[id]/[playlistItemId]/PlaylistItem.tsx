@@ -184,8 +184,10 @@ export default function PlaylistItem({
             {q.options.map((opt) => (
               <div
                 key={opt.id}
+                onClick={() => !answered && setSelectedOption(opt.id)}
                 className={
                   `flex items-start space-x-2 rounded-md border p-4 ` +
+                  (!answered ? "cursor-pointer" : "") +
                   (answered && opt.isCorrect
                     ? "border-green-300 bg-green-50"
                     : answered && selectedOption === opt.id && !opt.isCorrect
