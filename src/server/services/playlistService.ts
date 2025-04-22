@@ -31,16 +31,24 @@ export async function generatePlaylist(
     const totalCount =
       topicCounts.reduce((sum, tc) => sum + tc._count.id, 0) || 1;
 
-    topicPrevalences = topicCounts.map((tc) => ({
-      id: "",
-      topic: tc.topic,
-      examType: "CBO", // Set default exam type
-      year: 2024, // Add required year field
-      count: tc._count.id,
-      prevalence: tc._count.id / totalCount,
-      updatedAt: new Date(),
-    }));
-    // Nota: não persiste no DB; use upsert aqui se quiser gravar.
+    // Create TopicPrevalence records
+    await Promise.all(
+      topicCounts.map((tc) =>
+        db.topicPrevalence.create({
+          data: {
+            topic: tc.topic,
+            examType: "CBO", // Set default exam type
+            year: 2024, // Add required year field
+            count: tc._count.id,
+            prevalence: tc._count.id / totalCount,
+            updatedAt: new Date(),
+          },
+        }),
+      ),
+    );
+
+    // Fetch the created records
+    topicPrevalences = await db.topicPrevalence.findMany();
   }
 
   // 2. Buscar interações do usuário com temas

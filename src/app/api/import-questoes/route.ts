@@ -34,6 +34,89 @@ export async function POST() {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const questions: ImportQuestion[] = await response.json();
 
+    // Process questions in chunks
+    for (let i = 0; i < questions.length; i += CHUNK_SIZE) {
+      const chunk = questions.slice(i, i + CHUNK_SIZE);
+
+      try {
+        await db.$transaction(
+          async (tx) => {
+            // Create questions for this chunk
+            await tx.question.createMany({
+              data: chunk.map((q) => ({
+                year: q.year,
+                type: q.type,
+                number: q.number,
+                topic: q.topic ?? "",
+                statement: q.statement,
+                explanation: q.explanation ?? "",
+                image: q.image ?? "",
+              })),
+            });
+
+            // Get the created question IDs with their identifying information
+            const questionIds = await tx.question.findMany({
+              where: {
+                year: { in: chunk.map((q) => q.year) },
+                type: { in: chunk.map((q) => q.type) },
+                number: { in: chunk.map((q) => q.number) },
+              },
+              select: {
+                id: true,
+                year: true,
+                type: true,
+                number: true,
+              },
+            });
+
+            // Create a map for quick lookup of question IDs
+            const questionIdMap = new Map(
+              questionIds.map((q) => [`${q.year}-${q.type}-${q.number}`, q.id]),
+            );
+
+            // Create options for this chunk
+            const chunkOptions = chunk.flatMap((q) => {
+              const questionId = questionIdMap.get(
+                `${q.year}-${q.type}-${q.number}`,
+              );
+              if (!questionId) {
+                throw new Error(
+                  `Failed to find question ID for year ${q.year}, type ${q.type}, number ${q.number}`,
+                );
+              }
+              // Filter out options with empty text and image
+              return q.options
+                .filter((opt) => opt.text !== "" || opt.image !== "")
+                .map((opt) => ({
+                  questionId,
+                  text: opt.text,
+                  image: opt.image,
+                  isCorrect: opt.isCorrect,
+                }));
+            });
+
+            // Create new options
+            await tx.option.createMany({
+              data: chunkOptions,
+              skipDuplicates: true, // Skip if option already exists
+            });
+          },
+          {
+            timeout: 30 * 1000, // 30 seconds timeout per chunk
+            maxWait: 30 * 1000, // 30 seconds max wait per chunk
+          },
+        );
+      } catch (chunkError) {
+        console.error(
+          `Erro ao processar chunk ${i / CHUNK_SIZE + 1}:`,
+          chunkError,
+        );
+        throw new Error(
+          `Falha ao processar chunk de questões ${i / CHUNK_SIZE + 1}`,
+        );
+      }
+    }
+
     // Generate TopicPrevalences after all questions are imported
     await db.$transaction(
       async (tx) => {

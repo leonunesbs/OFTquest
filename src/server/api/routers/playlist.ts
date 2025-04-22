@@ -110,29 +110,51 @@ export const playlistRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
       const currentYear = new Date().getFullYear();
+      const yearsAgo = parseInt(input.period);
 
+      // Get user's topic interactions
       const topicInteractions = await ctx.db.userTopicInteraction.findMany({
         where: { userId },
       });
 
+      // Get topic prevalences for the selected period
       const topicPrevalences = await ctx.db.topicPrevalence.findMany({
         where: {
           year: {
-            gte: currentYear - parseInt(input.period),
+            gte: currentYear - yearsAgo,
           },
           examType: input.examType,
         },
       });
 
-      return topicInteractions.map((ti) => ({
-        topic: ti.topic,
-        accuracy: ti.accuracy,
-        questionsCount: ti.questionsCount,
-        correctCount: ti.correctCount,
-        lastSeenAt: ti.lastSeenAt,
-        prevalence:
-          topicPrevalences.find((tp) => tp.topic === ti.topic)?.prevalence ?? 0,
-      }));
+      // Calculate average prevalence for each topic
+      const topicPrevalenceMap = topicPrevalences.reduce(
+        (acc, tp) => {
+          const current = acc[tp.topic] ?? { sum: 0, count: 0 };
+          return {
+            ...acc,
+            [tp.topic]: {
+              sum: current.sum + tp.prevalence,
+              count: current.count + 1,
+            },
+          };
+        },
+        {} as Record<string, { sum: number; count: number }>,
+      );
+
+      return topicInteractions.map((ti) => {
+        const topicPrevalence = topicPrevalenceMap[ti.topic];
+        return {
+          topic: ti.topic,
+          accuracy: ti.accuracy,
+          questionsCount: ti.questionsCount,
+          correctCount: ti.correctCount,
+          lastSeenAt: ti.lastSeenAt,
+          prevalence: topicPrevalence
+            ? topicPrevalence.sum / topicPrevalence.count
+            : 0,
+        };
+      });
     }),
 });
 
