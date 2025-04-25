@@ -1,6 +1,5 @@
+import PlaylistItem from "~/components/PlaylistItem";
 import { api } from "~/trpc/server";
-import PlaylistItem from "./PlaylistItem";
-// src/app/playlists/[id]/[playlistItemId]/page.tsx
 import { redirect } from "next/navigation";
 
 export default async function PlaylistItemPage({

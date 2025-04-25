@@ -2,7 +2,6 @@
 "use client";
 
 import { ArrowLeft, Edit, Trash2 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -10,11 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { useParams, useRouter } from "next/navigation";
 
-import Image from "next/image";
 import { Button } from "~/components/ui/button";
-import { useToast } from "~/hooks/use-toast";
+import Image from "next/image";
 import { api } from "~/trpc/react";
+import { useToast } from "~/hooks/use-toast";
 
 export default function ViewQuestionPage() {
   const router = useRouter();
@@ -50,12 +50,12 @@ export default function ViewQuestionPage() {
   };
 
   if (isLoading) {
-    return <div className="container py-10">Carregando questão...</div>;
+    return <div>Carregando questão...</div>;
   }
 
   if (!question) {
     return (
-      <div className="container py-10">
+      <div>
         <Card>
           <CardHeader>
             <CardTitle>Questão não encontrada</CardTitle>
@@ -71,7 +71,7 @@ export default function ViewQuestionPage() {
   }
 
   return (
-    <div className="container py-10">
+    <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Visualizar Questão</h1>
         <div className="flex gap-2">

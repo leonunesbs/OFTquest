@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { type Prisma } from "@prisma/client";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import QuestionsFilter from "~/components/QuestionsFilter";
+import QuestionsTable from "~/components/QuestionsTable";
 import { Button } from "~/components/ui/button";
-import QuestionsFilter from "./QuestionsFilter";
-import QuestionsTable from "./QuestionsTable";
 // src/app/admin/questions/page.tsx
 import { Suspense } from "react";
 import { db } from "~/server/db";
@@ -97,7 +97,7 @@ export default async function QuestionsPage({
     .then((types) => types.map((t) => t.type));
 
   return (
-    <div className="container py-10">
+    <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Questões</h1>
         <Link href="/admin/questions/new">

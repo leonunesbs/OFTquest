@@ -1,6 +1,12 @@
 "use client";
 
-import { AlertCircle, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -75,8 +81,8 @@ export default function PlaylistItem({
       if (isCorrect) {
         toast({
           title: "Resposta correta!",
-          description: "Parabéns!",
           variant: "default",
+          duration: 2000,
         });
       }
     },
@@ -104,7 +110,7 @@ export default function PlaylistItem({
   };
 
   return (
-    <div className="container py-10">
+    <div>
       <h1 className="mb-4 text-2xl font-bold">{playlist.name}</h1>
       <Progress value={progress} className="mb-6 h-2" />
 
@@ -162,20 +168,22 @@ export default function PlaylistItem({
             </div>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div
             dangerouslySetInnerHTML={{ __html: q.statement }}
             className="prose mb-4"
           />
-          {q.image && (
-            <Image
-              src={`/imagens/${q.image}`}
-              alt="Questão"
-              width={400}
-              height={300}
-              className="rounded"
-            />
-          )}
+          <div className="flex justify-center">
+            {q.image && (
+              <Image
+                src={`/imagens/${q.image}`}
+                alt="Questão"
+                width={400}
+                height={300}
+                className="rounded"
+              />
+            )}
+          </div>
           <RadioGroup
             value={selectedOption ?? ""}
             onValueChange={setSelectedOption}
@@ -189,9 +197,9 @@ export default function PlaylistItem({
                   `flex items-start space-x-2 rounded-md border p-4 ` +
                   (!answered ? "cursor-pointer" : "") +
                   (answered && opt.isCorrect
-                    ? "border-green-300 bg-green-50"
+                    ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950"
                     : answered && selectedOption === opt.id && !opt.isCorrect
-                      ? "border-red-300 bg-red-50"
+                      ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-950"
                       : "")
                 }
               >
@@ -201,16 +209,25 @@ export default function PlaylistItem({
                   className={answered && opt.isCorrect ? "font-bold" : ""}
                 >
                   <span dangerouslySetInnerHTML={{ __html: opt.text! }} />
+                  {opt.image && (
+                    <Image
+                      src={`/imagens/${opt.image}`}
+                      alt={opt.text!}
+                      width={400}
+                      height={300}
+                      className="rounded"
+                    />
+                  )}
                 </Label>
               </div>
             ))}
           </RadioGroup>
           {answered && (
-            <div className="mt-4 rounded bg-gray-50 p-4">
+            <div className="mt-4 rounded bg-gray-50 p-4 dark:bg-gray-800">
               <h3 className="mb-2 font-bold">Explicação</h3>
               <div
                 dangerouslySetInnerHTML={{ __html: q.explanation }}
-                className="prose"
+                className="prose dark:prose-invert"
               />
             </div>
           )}
@@ -237,9 +254,16 @@ export default function PlaylistItem({
           <div className="space-x-2">
             <Button
               onClick={confirmAnswer}
-              disabled={answered || !selectedOption}
+              disabled={answered || !selectedOption || answerMutation.isPending}
             >
-              Confirmar
+              {answerMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Confirmando...
+                </>
+              ) : (
+                "Confirmar"
+              )}
             </Button>
 
             <Link href={`/playlists/${playlist.id}/results`} passHref>

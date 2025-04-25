@@ -10,7 +10,7 @@ import PlaylistForm, { availableYears } from "./PlaylistForm";
 
 export default function CreatePlaylistPage() {
   return (
-    <div className="container py-10">
+    <div>
       <Card className="mx-auto max-w-lg">
         <CardHeader>
           <CardTitle>Criar Nova Playlist</CardTitle>

@@ -3,10 +3,10 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 import {
   generatePlaylist,
   updateUserTopicInteraction,
-} from "../../services/playlistService";
+} from "~/server/services/playlistService";
 
-import { z } from "zod";
 import { db } from "~/server/db";
+import { z } from "zod";
 
 export const playlistRouter = createTRPCRouter({
   // Obter uma playlist específica com suas questões

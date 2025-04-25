@@ -22,12 +22,20 @@ export default async function PlaylistsPage() {
   const session = await auth();
   if (!session?.user) redirect("/");
 
-  const playlists = await db.playlist.findMany({});
+  const playlists = await db.playlist.findMany({
+    include: {
+      items: true,
+      playlistMetric: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 
   // Caso não haja nenhuma playlist ainda
   if (playlists.length === 0) {
     return (
-      <div className="container py-10">
+      <div>
         <Card className="mx-auto max-w-lg text-center">
           <CardHeader>
             <CardTitle>Você ainda não tem playlists</CardTitle>
@@ -47,7 +55,7 @@ export default async function PlaylistsPage() {
 
   // Lista as playlists existentes
   return (
-    <div className="container space-y-6 py-10">
+    <div className="container space-y-6">
       <div className="flex justify-end">
         <Button asChild>
           <Link href="/playlists/create">Nova Playlist</Link>
@@ -58,7 +66,21 @@ export default async function PlaylistsPage() {
           <Card key={pl.id} className="group">
             <CardHeader>
               <CardTitle>{pl.name}</CardTitle>
-              <CardDescription></CardDescription>
+              <CardDescription>
+                <div className="space-y-2">
+                  <p>{pl.items.length} questões</p>
+                  {pl.playlistMetric && (
+                    <div className="space-y-1">
+                      <p>Respondidas: {pl.playlistMetric.answeredQuestions}</p>
+                      <p>Acertos: {pl.playlistMetric.correctAnswers}</p>
+                      <p>
+                        Taxa de acerto:{" "}
+                        {(pl.playlistMetric.accuracy * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardDescription>
             </CardHeader>
             <CardFooter>
               <Button asChild variant="outline">

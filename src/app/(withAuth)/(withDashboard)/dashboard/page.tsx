@@ -5,11 +5,11 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 
-import DashboardClient from "./DashboardClient";
+import DashboardClient from "~/components/DashboardClient";
 
 export default function DashboardPage() {
   return (
-    <div className="container py-10">
+    <div>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Seu Desempenho</CardTitle>
@@ -19,7 +19,6 @@ export default function DashboardPage() {
         </CardHeader>
       </Card>
 
-      {/* tudo que precisa de hooks e gráfico roda no client */}
       <DashboardClient />
     </div>
   );

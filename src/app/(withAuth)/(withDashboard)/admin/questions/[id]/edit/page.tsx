@@ -1,8 +1,8 @@
-import { type Prisma } from "@prisma/client";
-import { db } from "~/server/db";
-import QuestionEditForm from "./QuestionEditForm";
 // src/app/admin/questions/[id]/edit/page.tsx
+import { type Prisma } from "@prisma/client";
 import { notFound } from "next/navigation";
+import QuestionEditForm from "~/components/QuestionEditForm";
+import { db } from "~/server/db";
 
 // Esta é a parte Server Component
 export default async function EditQuestionPage({
@@ -51,7 +51,7 @@ export default async function EditQuestionPage({
 
   // Passar os dados para o Client Component
   return (
-    <div className="container py-10">
+    <div>
       <h1 className="mb-6 text-3xl font-bold">
         {isEditing ? "Editar Questão" : "Nova Questão"}
       </h1>
