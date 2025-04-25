@@ -114,38 +114,40 @@ export default function PlaylistItem({
       <h1 className="mb-4 text-2xl font-bold">{playlist.name}</h1>
       <Progress value={progress} className="mb-6 h-2" />
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {items.map((it, idx) => {
-          const done = Boolean(it.selectedOptionId);
-          const correct =
-            done &&
-            it.question.options.some(
-              (o) => o.id === it.selectedOptionId && o.isCorrect,
+      <div className="mb-4 overflow-x-auto">
+        <div className="flex min-w-min gap-2 pb-2">
+          {items.map((it, idx) => {
+            const done = Boolean(it.selectedOptionId);
+            const correct =
+              done &&
+              it.question.options.some(
+                (o) => o.id === it.selectedOptionId && o.isCorrect,
+              );
+            return (
+              <Link key={it.id} href={`/playlists/${playlist.id}/${it.id}`}>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant={idx === currentIndex ? "default" : "outline"}
+                    size="sm"
+                  >
+                    {idx + 1}
+                    {done && (
+                      <div
+                        className={correct ? "text-green-600" : "text-red-600"}
+                      >
+                        {correct ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4" />
+                        )}
+                      </div>
+                    )}
+                  </Button>
+                </div>
+              </Link>
             );
-          return (
-            <Link key={it.id} href={`/playlists/${playlist.id}/${it.id}`}>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant={idx === currentIndex ? "default" : "outline"}
-                  size="sm"
-                >
-                  {idx + 1}
-                  {done && (
-                    <div
-                      className={correct ? "text-green-600" : "text-red-600"}
-                    >
-                      {correct ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <AlertCircle className="h-4 w-4" />
-                      )}
-                    </div>
-                  )}
-                </Button>
-              </div>
-            </Link>
-          );
-        })}
+          })}
+        </div>
       </div>
 
       <Card>
