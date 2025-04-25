@@ -298,7 +298,7 @@ export default function PlaylistItem({
               </Button>
             </Link>
           </div>
-          <div className="space-x-2">
+          <div className="flex flex-col items-center gap-2 sm:flex-row">
             <Button
               onClick={confirmAnswer}
               disabled={answered || !selectedOption || answerMutation.isPending}
@@ -312,7 +312,6 @@ export default function PlaylistItem({
                 "Confirmar"
               )}
             </Button>
-
             <Link href={`/playlists/${playlist.id}/results`} passHref>
               <Button variant="outline" disabled={answeredCount === 0}>
                 Finalizar
