@@ -1,6 +1,7 @@
+import { redirect } from "next/navigation";
 import PlaylistItem from "~/components/PlaylistItem";
 import { api } from "~/trpc/server";
-import { redirect } from "next/navigation";
+import { getExamMode } from "./actions";
 
 export default async function PlaylistItemPage({
   params,
@@ -9,6 +10,7 @@ export default async function PlaylistItemPage({
 }) {
   const { id, playlistItemId } = await params;
   const playlist = await api.playlist.getById({ id });
+  const examMode = await getExamMode();
 
   if (!playlist) {
     redirect("/playlists");
@@ -29,6 +31,7 @@ export default async function PlaylistItemPage({
       playlist={playlist}
       currentItem={currentItem!}
       currentIndex={currentIndex}
+      initialExamMode={examMode}
     />
   );
 }

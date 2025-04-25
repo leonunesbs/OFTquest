@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Loader2,
 } from "lucide-react";
+import { setExamMode } from "~/app/(withAuth)/(withDashboard)/playlists/[id]/[playlistItemId]/actions";
 import {
   Card,
   CardContent,
@@ -16,6 +17,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import { Switch } from "~/components/ui/switch";
 
 import { type Prisma } from "@prisma/client";
 import Image from "next/image";
@@ -51,15 +53,23 @@ interface PlaylistItemProps {
     };
   }>;
   currentIndex: number;
+  initialExamMode: boolean;
 }
 
 export default function PlaylistItem({
   playlist,
   currentItem,
   currentIndex,
+  initialExamMode,
 }: PlaylistItemProps) {
   const { toast } = useToast();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [examMode, setExamModeState] = useState(initialExamMode);
+
+  const handleExamModeChange = async (checked: boolean) => {
+    setExamModeState(checked);
+    await setExamMode(checked);
+  };
 
   // State for answer
   const [selectedOption, setSelectedOption] = useState<string | null>(
@@ -130,7 +140,17 @@ export default function PlaylistItem({
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">{playlist.name}</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{playlist.name}</h1>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="exam-mode">Modo Prova</Label>
+          <Switch
+            id="exam-mode"
+            checked={examMode}
+            onCheckedChange={handleExamModeChange}
+          />
+        </div>
+      </div>
       <Progress value={progress} className="mb-6 h-2" />
 
       <div className="mb-4 overflow-x-auto" ref={scrollContainerRef}>
@@ -151,7 +171,7 @@ export default function PlaylistItem({
                     data-index={idx}
                   >
                     {idx + 1}
-                    {done && (
+                    {done && !examMode && (
                       <div
                         className={correct ? "text-green-600" : "text-red-600"}
                       >
@@ -180,7 +200,7 @@ export default function PlaylistItem({
               Tema: {q.topic} {q.subtopic && `| ${q.subtopic}`}
             </CardDescription>
           </div>
-          {answered && (
+          {answered && !examMode && (
             <div className={isCorrect ? "text-green-600" : "text-red-600"}>
               {isCorrect ? (
                 <Check className="h-6 w-6" />
@@ -218,9 +238,12 @@ export default function PlaylistItem({
                 className={
                   `flex items-start space-x-2 rounded-md border p-4 ` +
                   (!answered ? "cursor-pointer" : "") +
-                  (answered && opt.isCorrect
+                  (answered && !examMode && opt.isCorrect
                     ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950"
-                    : answered && selectedOption === opt.id && !opt.isCorrect
+                    : answered &&
+                        !examMode &&
+                        selectedOption === opt.id &&
+                        !opt.isCorrect
                       ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-950"
                       : "")
                 }
@@ -228,7 +251,9 @@ export default function PlaylistItem({
                 <RadioGroupItem value={opt.id} id={opt.id} />
                 <Label
                   htmlFor={opt.id}
-                  className={answered && opt.isCorrect ? "font-bold" : ""}
+                  className={
+                    answered && !examMode && opt.isCorrect ? "font-bold" : ""
+                  }
                 >
                   <span dangerouslySetInnerHTML={{ __html: opt.text! }} />
                   {opt.image && (
@@ -244,7 +269,7 @@ export default function PlaylistItem({
               </div>
             ))}
           </RadioGroup>
-          {answered && (
+          {answered && !examMode && (
             <div className="mt-4 rounded bg-gray-50 p-4 dark:bg-gray-800">
               <h3 className="mb-2 font-bold">Explicação</h3>
               <div
