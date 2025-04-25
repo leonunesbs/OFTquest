@@ -10,21 +10,21 @@ import { TRPCReactProvider } from "~/trpc/react";
 const openSans = Open_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "OFTquest - Plataforma de Estudos e Métricas em Oftalmologia",
+  title: "OFTquest - Questões Comentadas para o CBO",
   description:
-    "OFTquest é a plataforma definitiva para estudos e métricas em oftalmologia. Acesse questões específicas, acompanhe seu progresso e melhore seu desempenho com ferramentas especializadas para residentes e profissionais de oftalmologia.",
-  applicationName: "OFTquest - Estudos em Oftalmologia",
+    "OFTquest é a plataforma especializada em questões comentadas para o CBO (Conselho Brasileiro de Oftalmologia). Acesse questões detalhadamente explicadas, acompanhe seu progresso e melhore seu desempenho com ferramentas específicas para a prova de título em oftalmologia.",
+  applicationName: "OFTquest - Questões CBO",
   generator: "Next.js",
   keywords: [
-    "oftalmologia",
-    "estudos médicos",
-    "questões oftalmologia",
-    "métricas médicas",
-    "residência médica",
-    "estudos para médicos",
-    "questões de oftalmologia",
-    "plataforma de estudos médicos",
-    "preparação para prova de título",
+    "CBO",
+    "prova de título oftalmologia",
+    "questões comentadas oftalmologia",
+    "prova de título CBO",
+    "questões CBO",
+    "estudos para prova de título",
+    "residência oftalmologia",
+    "preparação CBO",
+    "questões comentadas CBO",
   ],
   authors: [{ name: "Leonardo Nunes", url: "https://github.com/leonunesbs" }],
   robots: {
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
     languages: { "pt-BR": "https://oftquest.vercel.app" },
   },
   openGraph: {
-    title: "OFTquest - Plataforma de Estudos em Oftalmologia",
+    title: "OFTquest - Questões Comentadas para o CBO",
     description:
-      "Transforme sua preparação em oftalmologia com o OFTquest. Acesse questões específicas, acompanhe métricas de desempenho e otimize seus estudos com nossa plataforma especializada para residentes e profissionais de oftalmologia.",
+      "Prepare-se para a prova de título do CBO com o OFTquest. Acesse questões detalhadamente comentadas, acompanhe seu progresso e otimize seus estudos com nossa plataforma especializada para a prova de título em oftalmologia.",
     url: "https://oftquest.vercel.app",
     siteName: "OFTquest",
     locale: "pt_BR",
@@ -55,9 +55,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     site: "@leonunesbs",
-    title: "OFTquest - Sua Plataforma de Estudos em Oftalmologia",
+    title: "OFTquest - Questões Comentadas para o CBO",
     description:
-      "OFTquest oferece ferramentas especializadas para estudos em oftalmologia. Questões específicas, métricas de desempenho e recursos exclusivos para otimizar sua preparação. Comece agora!",
+      "OFTquest oferece questões detalhadamente comentadas para a prova de título do CBO. Prepare-se com questões específicas, explicações detalhadas e recursos exclusivos para otimizar sua preparação. Comece agora!",
     images: ["https://oftquest.vercel.app/oftquest-logo.png"],
   },
   manifest: "/favicon/site.webmanifest",

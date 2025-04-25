@@ -20,7 +20,7 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { type Prisma } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
@@ -59,6 +59,7 @@ export default function PlaylistItem({
   currentIndex,
 }: PlaylistItemProps) {
   const { toast } = useToast();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // State for answer
   const [selectedOption, setSelectedOption] = useState<string | null>(
@@ -72,6 +73,24 @@ export default function PlaylistItem({
         )
       : null,
   );
+
+  // Center current question in scroll view
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const currentButton = container.querySelector(
+      `[data-index="${currentIndex}"]`,
+    );
+    if (!currentButton) return;
+
+    const containerWidth = container.clientWidth;
+    const buttonLeft = (currentButton as HTMLElement).offsetLeft;
+    const buttonWidth = (currentButton as HTMLElement).offsetWidth;
+
+    const scrollLeft = buttonLeft - containerWidth / 2 + buttonWidth / 2;
+    container.scrollLeft = Math.max(0, scrollLeft);
+  }, [currentIndex]);
 
   const answerMutation = api.playlist.answerQuestion.useMutation({
     onSuccess({ isCorrect }) {
@@ -114,7 +133,7 @@ export default function PlaylistItem({
       <h1 className="mb-4 text-2xl font-bold">{playlist.name}</h1>
       <Progress value={progress} className="mb-6 h-2" />
 
-      <div className="mb-4 overflow-x-auto">
+      <div className="mb-4 overflow-x-auto" ref={scrollContainerRef}>
         <div className="flex min-w-min gap-2 pb-2">
           {items.map((it, idx) => {
             const done = Boolean(it.selectedOptionId);
@@ -129,6 +148,7 @@ export default function PlaylistItem({
                   <Button
                     variant={idx === currentIndex ? "default" : "outline"}
                     size="sm"
+                    data-index={idx}
                   >
                     {idx + 1}
                     {done && (
