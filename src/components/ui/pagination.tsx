@@ -62,6 +62,7 @@ const PaginationLink = ({
       }),
       className,
     )}
+    scroll={false}
     {...props}
   />
 );
