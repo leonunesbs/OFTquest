@@ -298,7 +298,7 @@ export default function PlaylistItem({
               </Button>
             </Link>
           </div>
-          <div className="flex flex-col items-center gap-2 sm:flex-row">
+          <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-start">
             <Button
               onClick={confirmAnswer}
               disabled={answered || !selectedOption || answerMutation.isPending}
