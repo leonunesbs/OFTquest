@@ -13,8 +13,8 @@ import {
 } from "~/components/ui/sidebar";
 
 import { AppSidebar } from "~/components/AppSidebar";
-import { Separator } from "~/components/ui/separator";
 import { ThemeToggle } from "~/components/theme-toggle";
+import { Separator } from "~/components/ui/separator";
 
 function DashboardHeader() {
   return (
@@ -44,7 +44,7 @@ function DashboardHeader() {
 }
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>;
+  return <div className="flex flex-1 flex-col gap-4 px-2 py-4">{children}</div>;
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
