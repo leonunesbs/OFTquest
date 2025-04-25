@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  AlertCircle,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { setExamMode } from "~/app/(withAuth)/(withDashboard)/playlists/[id]/[playlistItemId]/actions";
 import {
   Card,
@@ -16,6 +10,16 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationFirst,
+  PaginationItem,
+  PaginationLast,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "~/components/ui/pagination";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { Switch } from "~/components/ui/switch";
 
@@ -153,41 +157,86 @@ export default function PlaylistItem({
       </div>
       <Progress value={progress} className="mb-6 h-2" />
 
-      <div className="mb-4 overflow-x-auto" ref={scrollContainerRef}>
-        <div className="flex min-w-min gap-2 pb-2">
-          {items.map((it, idx) => {
-            const done = Boolean(it.selectedOptionId);
-            const correct =
-              done &&
-              it.question.options.some(
-                (o) => o.id === it.selectedOptionId && o.isCorrect,
-              );
-            return (
-              <Link key={it.id} href={`/playlists/${playlist.id}/${it.id}`}>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant={idx === currentIndex ? "default" : "outline"}
-                    size="sm"
-                    data-index={idx}
-                  >
-                    {idx + 1}
-                    {done && !examMode && (
-                      <div
-                        className={correct ? "text-green-600" : "text-red-600"}
-                      >
-                        {correct ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <AlertCircle className="h-4 w-4" />
-                        )}
-                      </div>
-                    )}
-                  </Button>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+      <div className="mb-4 flex items-center justify-center">
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationFirst
+                href={`/playlists/${playlist.id}/${items[0]?.id}`}
+                className={
+                  currentIndex <= 0 ? "pointer-events-none opacity-50" : ""
+                }
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationPrevious
+                href={`/playlists/${playlist.id}/${items[currentIndex - 1]?.id}`}
+                className={
+                  currentIndex <= 0 ? "pointer-events-none opacity-50" : ""
+                }
+              />
+            </PaginationItem>
+
+            {items
+              .slice(
+                Math.max(0, currentIndex - 2),
+                Math.min(items.length, currentIndex + 3),
+              )
+              .map((it, idx) => {
+                const actualIndex = Math.max(0, currentIndex - 2) + idx;
+                const done = Boolean(it.selectedOptionId);
+                const correct =
+                  done &&
+                  it.question.options.some(
+                    (o) => o.id === it.selectedOptionId && o.isCorrect,
+                  );
+                return (
+                  <PaginationItem key={it.id}>
+                    <PaginationLink
+                      href={`/playlists/${playlist.id}/${it.id}`}
+                      isActive={actualIndex === currentIndex}
+                    >
+                      {actualIndex + 1}
+                      {done && !examMode && (
+                        <div
+                          className={
+                            correct ? "text-green-600" : "text-red-600"
+                          }
+                        >
+                          {correct ? (
+                            <Check className="h-4 w-4" />
+                          ) : (
+                            <AlertCircle className="h-4 w-4" />
+                          )}
+                        </div>
+                      )}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+
+            <PaginationItem>
+              <PaginationNext
+                href={`/playlists/${playlist.id}/${items[currentIndex + 1]?.id}`}
+                className={
+                  currentIndex >= items.length - 1
+                    ? "pointer-events-none opacity-50"
+                    : ""
+                }
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationLast
+                href={`/playlists/${playlist.id}/${items[items.length - 1]?.id}`}
+                className={
+                  currentIndex >= items.length - 1
+                    ? "pointer-events-none opacity-50"
+                    : ""
+                }
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
 
       <Card>
@@ -280,24 +329,6 @@ export default function PlaylistItem({
           )}
         </CardContent>
         <CardFooter className="flex flex-col justify-between gap-4 sm:flex-row">
-          <div className="flex gap-2">
-            <Link
-              href={`/playlists/${playlist.id}/${items[currentIndex - 1]?.id}`}
-              passHref
-            >
-              <Button disabled={currentIndex <= 0} variant="outline">
-                <ChevronLeft className="mr-2" /> Anterior
-              </Button>
-            </Link>
-            <Link
-              href={`/playlists/${playlist.id}/${items[currentIndex + 1]?.id}`}
-              passHref
-            >
-              <Button disabled={currentIndex >= items.length - 1}>
-                Próxima <ChevronRight className="ml-2" />
-              </Button>
-            </Link>
-          </div>
           <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-start">
             <Button
               onClick={confirmAnswer}

@@ -1,4 +1,11 @@
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  MoreHorizontal,
+} from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
 import { type ButtonProps, buttonVariants } from "~/components/ui/button";
@@ -36,8 +43,9 @@ PaginationItem.displayName = "PaginationItem";
 
 type PaginationLinkProps = {
   isActive?: boolean;
+  href: string;
 } & Pick<ButtonProps, "size"> &
-  React.ComponentProps<"a">;
+  Omit<React.ComponentProps<"a">, "href">;
 
 const PaginationLink = ({
   className,
@@ -45,7 +53,7 @@ const PaginationLink = ({
   size = "icon",
   ...props
 }: PaginationLinkProps) => (
-  <a
+  <Link
     aria-current={isActive ? "page" : undefined}
     className={cn(
       buttonVariants({
@@ -70,7 +78,7 @@ const PaginationPrevious = ({
     {...props}
   >
     <ChevronLeft className="h-4 w-4" />
-    <span>Previous</span>
+    <span className="hidden sm:inline">Anterior</span>
   </PaginationLink>
 );
 PaginationPrevious.displayName = "PaginationPrevious";
@@ -85,11 +93,43 @@ const PaginationNext = ({
     className={cn("gap-1 pr-2.5", className)}
     {...props}
   >
-    <span>Next</span>
+    <span className="hidden sm:inline">Próximo</span>
     <ChevronRight className="h-4 w-4" />
   </PaginationLink>
 );
 PaginationNext.displayName = "PaginationNext";
+
+const PaginationFirst = ({
+  className,
+  ...props
+}: React.ComponentProps<typeof PaginationLink>) => (
+  <PaginationLink
+    aria-label="Go to first page"
+    size="default"
+    className={cn("gap-1 pl-2.5", className)}
+    {...props}
+  >
+    <ChevronsLeft className="h-4 w-4" />
+    <span className="hidden sm:inline">Primeiro</span>
+  </PaginationLink>
+);
+PaginationFirst.displayName = "PaginationFirst";
+
+const PaginationLast = ({
+  className,
+  ...props
+}: React.ComponentProps<typeof PaginationLink>) => (
+  <PaginationLink
+    aria-label="Go to last page"
+    size="default"
+    className={cn("gap-1 pr-2.5", className)}
+    {...props}
+  >
+    <span className="hidden sm:inline">Último</span>
+    <ChevronsRight className="h-4 w-4" />
+  </PaginationLink>
+);
+PaginationLast.displayName = "PaginationLast";
 
 const PaginationEllipsis = ({
   className,
@@ -110,7 +150,9 @@ export {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
+  PaginationFirst,
   PaginationItem,
+  PaginationLast,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,

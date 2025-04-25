@@ -44,7 +44,11 @@ function DashboardHeader() {
 }
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-1 flex-col gap-4 px-2 py-4">{children}</div>;
+  return (
+    <div className="flex flex-1 flex-col gap-4 px-2 py-4 sm:px-4">
+      {children}
+    </div>
+  );
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
