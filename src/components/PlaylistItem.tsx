@@ -120,24 +120,26 @@ export default function PlaylistItem({
 
   return (
     <Card>
-      <CardHeader className="flex items-start justify-between">
-        <div>
-          <CardTitle className="text-lg">
-            Questão {q.year} – {q.type} – {q.number}
-          </CardTitle>
-          <CardDescription>
-            Tema: {q.topic} {q.subtopic && `| ${q.subtopic}`}
-          </CardDescription>
-        </div>
-        {answered && !examMode && (
-          <div className={isCorrect ? "text-green-600" : "text-red-600"}>
-            {isCorrect ? (
-              <Check className="h-6 w-6" />
-            ) : (
-              <AlertCircle className="h-6 w-6" />
-            )}
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-lg">
+              Questão {q.year} – {q.type} – {q.number}
+            </CardTitle>
+            <CardDescription>
+              Tema: {q.topic} {q.subtopic && `| ${q.subtopic}`}
+            </CardDescription>
           </div>
-        )}
+          {answered && !examMode && (
+            <div className={isCorrect ? "text-green-600" : "text-red-600"}>
+              {isCorrect ? (
+                <Check className="h-6 w-6" />
+              ) : (
+                <AlertCircle className="h-6 w-6" />
+              )}
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div
