@@ -5,10 +5,10 @@ import {
   PaginationFirst,
   PaginationItem,
   PaginationLast,
+  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from "~/components/ui/pagination";
-import PlaylistPaginationLink from "./PlaylistPaginationLink";
 
 interface PlaylistPaginationProps {
   playlist: Prisma.PlaylistGetPayload<{
@@ -71,14 +71,15 @@ export default function PlaylistPagination({
                 );
               return (
                 <PaginationItem key={it.id}>
-                  <PlaylistPaginationLink
+                  <PaginationLink
                     href={`/playlists/${playlist.id}/${it.id}`}
                     isActive={actualIndex === currentIndex}
-                    done={done}
-                    correct={correct}
-                    examMode={examMode}
-                    number={actualIndex + 1}
-                  />
+                    className={`${
+                      actualIndex === currentIndex ? "rounded border" : ""
+                    } ${done && !examMode ? (correct ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400") : ""}`}
+                  >
+                    {actualIndex + 1}
+                  </PaginationLink>
                 </PaginationItem>
               );
             })}
