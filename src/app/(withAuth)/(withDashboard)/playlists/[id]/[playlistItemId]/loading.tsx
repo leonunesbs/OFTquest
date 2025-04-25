@@ -15,15 +15,11 @@ export default function Loading() {
         <div className="flex items-center justify-center">
           <div className="flex items-center gap-2">
             <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-10 w-10" />
             <div className="flex gap-2">
               <Skeleton className="h-10 w-10" />
               <Skeleton className="h-10 w-10" />
               <Skeleton className="h-10 w-10" />
-              <Skeleton className="h-10 w-10" />
-              <Skeleton className="h-10 w-10" />
             </div>
-            <Skeleton className="h-10 w-10" />
             <Skeleton className="h-10 w-10" />
           </div>
         </div>
