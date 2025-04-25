@@ -9,9 +9,9 @@ export default async function PlaylistItemLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { id: string; playlistItemId: string };
+  params: Promise<{ id: string; playlistItemId: string }>;
 }) {
-  const { id } = params;
+  const { id, playlistItemId } = await params;
   const playlist = await api.playlist.getById({ id });
   const examMode = await getExamMode();
 
@@ -20,7 +20,7 @@ export default async function PlaylistItemLayout({
   }
 
   const currentIndex = playlist.items.findIndex(
-    (item: { id: string }) => item.id === params.playlistItemId,
+    (item: { id: string }) => item.id === playlistItemId,
   );
 
   if (currentIndex === -1) {
