@@ -26,13 +26,13 @@ import { redirect } from "next/navigation";
 export default async function PlaylistResultsPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/");
 
   const playlist = await db.playlist.findUnique({
-    where: { id: params.id, userId: session.user.id },
+    where: { id: (await params).id, userId: session.user.id },
     include: {
       items: {
         include: {
@@ -76,7 +76,7 @@ export default async function PlaylistResultsPage({
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Resultados da Playlist</h1>
         <Button variant="outline" asChild>
-          <Link href={`/playlists/${params.id}`}>
+          <Link href={`/playlists/${(await params).id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar à Questões
           </Link>
