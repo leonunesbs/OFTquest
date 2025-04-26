@@ -68,23 +68,31 @@ model VerificationToken {
     @@unique([identifier, token])
 }
 
+model Topic {
+    id        String     @id @default(cuid())
+    name      String     @unique
+    questions Question[]
+    createdAt DateTime   @default(now())
+    updatedAt DateTime   @updatedAt
+}
+
 model Question {
     id            String          @id @default(cuid())
     year          Int
     type          String
     number        Int
-    topic         String
+    topics        Topic[] // Changed from topic String to topics Topic[]
     subtopic      String?
     statement     String
     options       Option[]
     explanation   String
-    image         String? // Path to image, if any
+    images        String[] // Path to image, if any
     comments      Comment[]
     playlistItems PlaylistItem[]
     userFavorites UserFavorites[]
 
     createdAt DateTime @default(now())
-    updatedAt DateTime @default(now()) @updatedAt
+    updatedAt DateTime @updatedAt
 }
 
 model Option {
@@ -92,7 +100,7 @@ model Option {
     question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
     questionId String
     text       String?
-    image      String? // Path to image, if any
+    images     String[]
     isCorrect  Boolean
 }
 
@@ -154,9 +162,9 @@ model TopicPrevalence {
     year       Int // Ano da prova
     count      Int // Número de questões deste tema no período
     prevalence Float // Valor calculado de prevalência (normalizado)
-    updatedAt  DateTime @updatedAt
+    updatedAt  DateTime @default(now()) @updatedAt
 
-    @@unique([topic, examType, year], name: "topic_examType_year")
+    @@unique([topic, examType, year])
 }
 
 // Modelo para rastrear interações do usuário com temas

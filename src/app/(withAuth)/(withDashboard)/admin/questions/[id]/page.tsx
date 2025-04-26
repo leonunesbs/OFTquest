@@ -2,6 +2,7 @@
 "use client";
 
 import { ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -9,12 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { useParams, useRouter } from "next/navigation";
 
-import { Button } from "~/components/ui/button";
 import Image from "next/image";
-import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 import { useToast } from "~/hooks/use-toast";
+import { api } from "~/trpc/react";
 
 export default function ViewQuestionPage() {
   const router = useRouter();
@@ -99,7 +99,7 @@ export default function ViewQuestionPage() {
             Questão {question.year} - {question.type} - {question.number}
           </CardTitle>
           <div className="text-sm text-muted-foreground">
-            Tema: {question.topic}
+            Tema: {question.topics?.map((t) => t.name).join(", ")}
             {question.subtopic && ` | Subtema: ${question.subtopic}`}
           </div>
         </CardHeader>
@@ -109,15 +109,18 @@ export default function ViewQuestionPage() {
             dangerouslySetInnerHTML={{ __html: question.statement }}
           />
 
-          {question.image && (
-            <div className="my-4 flex justify-center">
-              <Image
-                src={`/imagens/${question.image}`}
-                alt="Imagem da questão"
-                width={400}
-                height={300}
-                className="rounded-md"
-              />
+          {question.images.length > 0 && (
+            <div className="my-4 flex flex-wrap justify-center gap-4">
+              {question.images.map((image, index) => (
+                <Image
+                  key={index}
+                  src={image}
+                  alt={`Imagem ${index + 1} da questão`}
+                  width={400}
+                  height={300}
+                  className="rounded-md"
+                />
+              ))}
             </div>
           )}
 
@@ -140,15 +143,18 @@ export default function ViewQuestionPage() {
                       dangerouslySetInnerHTML={{ __html: option.text ?? "" }}
                     />
 
-                    {option.image && (
-                      <div className="mt-2">
-                        <Image
-                          src={option.image}
-                          alt="Imagem da opção"
-                          width={300}
-                          height={200}
-                          className="rounded-md"
-                        />
+                    {option.images.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-4">
+                        {option.images.map((image, imgIndex) => (
+                          <Image
+                            key={imgIndex}
+                            src={image}
+                            alt={`Imagem ${imgIndex + 1} da opção`}
+                            width={300}
+                            height={200}
+                            className="rounded-md"
+                          />
+                        ))}
                       </div>
                     )}
                   </div>

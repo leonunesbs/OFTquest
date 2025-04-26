@@ -14,118 +14,156 @@ const TIME_WEIGHT = 0.25;
  */
 export async function generatePlaylist(
   userId: string,
-  topicsCount: number,
-  questionsCount: number,
+  topicsCount: number | undefined,
   years: number[],
+  selectedTopics?: string[],
+  maxQuestions?: number,
 ): Promise<Question[]> {
-  // 1. Obter prevalências de todos os temas
-  let topicPrevalences: TopicPrevalence[] = await db.topicPrevalence.findMany();
+  // 1. Obter prevalências de todos os temas para os anos selecionados
+  let topicPrevalences: TopicPrevalence[] = await db.topicPrevalence.findMany({
+    where: {
+      year: { in: years },
+    },
+  });
 
   // 1a. (Primeira execução) Se não houver dados, inicializar a partir das questões
   if (topicPrevalences.length === 0) {
-    const topicCounts = await db.question.groupBy({
-      by: ["topic"],
+    const questions = await db.question.findMany({
       where: { year: { in: years } },
-      _count: { id: true },
+      include: { topics: true },
     });
-    const totalCount =
-      topicCounts.reduce((sum, tc) => sum + tc._count.id, 0) || 1;
 
-    topicPrevalences = topicCounts.map((tc) => ({
+    const topicCounts = questions.reduce(
+      (acc, q) => {
+        const topic = q.topics[0]?.name;
+        if (!topic) return acc;
+        if (!acc[topic]) acc[topic] = 0;
+        acc[topic]++;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const totalCount =
+      Object.values(topicCounts).reduce((sum, count) => sum + count, 0) || 1;
+
+    topicPrevalences = Object.entries(topicCounts).map(([topic, count]) => ({
       id: "",
-      topic: tc.topic,
-      examType: "CBO", // Set default exam type
-      year: 2024, // Add required year field
-      count: tc._count.id,
-      prevalence: tc._count.id / totalCount,
+      topic,
+      examType: "CBO",
+      year: 2024,
+      count,
+      prevalence: count / totalCount,
       updatedAt: new Date(),
     }));
-    // Nota: não persiste no DB; use upsert aqui se quiser gravar.
   }
 
-  // 2. Buscar interações do usuário com temas
+  // 2. Calcular prevalência média por tema para os anos selecionados
+  const topicPrevalenceMap = topicPrevalences.reduce(
+    (acc, tp) => {
+      const topic = tp.topic;
+      if (!topic) return acc;
+
+      if (!acc[topic]) {
+        acc[topic] = { sum: 0, count: 0 };
+      }
+
+      const prevalence = tp.prevalence ?? 0;
+      acc[topic].sum += prevalence;
+      acc[topic].count += 1;
+
+      return acc;
+    },
+    {} as Record<string, { sum: number; count: number }>,
+  );
+
+  // 3. Buscar interações do usuário com temas
   const userInteractions = await db.userTopicInteraction.findMany({
     where: { userId },
   });
 
-  // 3. Calcular ranking para cada tema
-  const topicRankings = topicPrevalences.map((tp) => {
-    const interaction = userInteractions.find((ui) => ui.topic === tp.topic);
+  // 4. Calcular ranking para cada tema
+  const topicRankings = Object.entries(topicPrevalenceMap).map(
+    ([topic, data]) => {
+      const interaction = userInteractions.find((ui) => ui.topic === topic);
+      const averagePrevalence = data.sum / data.count;
 
-    const daysSinceLastSeen = interaction
-      ? Math.floor(
-          (Date.now() - interaction.lastSeenAt.getTime()) /
-            (1000 * 60 * 60 * 24),
-        )
-      : 999;
-    const normalizedTimeSince = Math.min(daysSinceLastSeen / 30, 1);
+      const daysSinceLastSeen = interaction
+        ? Math.floor(
+            (Date.now() - interaction.lastSeenAt.getTime()) /
+              (1000 * 60 * 60 * 24),
+          )
+        : 999;
+      const normalizedTimeSince = Math.min(daysSinceLastSeen / 30, 1);
 
-    const accuracy = interaction?.accuracy ?? 0.5;
-    const invertedAccuracy = 1 - accuracy;
+      const accuracy = interaction?.accuracy ?? 0.5;
+      const invertedAccuracy = 1 - accuracy;
 
-    const ranking =
-      tp.prevalence * PREVALENCE_WEIGHT +
-      invertedAccuracy * ACCURACY_WEIGHT +
-      normalizedTimeSince * TIME_WEIGHT;
+      const ranking =
+        averagePrevalence * PREVALENCE_WEIGHT +
+        invertedAccuracy * ACCURACY_WEIGHT +
+        normalizedTimeSince * TIME_WEIGHT;
 
-    return {
-      topic: tp.topic,
-      ranking,
-      components: {
-        prevalence: tp.prevalence,
-        timeSince: normalizedTimeSince,
-        accuracy: invertedAccuracy,
-      },
-    };
-  });
+      return {
+        topic,
+        ranking,
+        components: {
+          prevalence: averagePrevalence,
+          timeSince: normalizedTimeSince,
+          accuracy: invertedAccuracy,
+        },
+      };
+    },
+  );
 
-  // 4. Ordenar e selecionar top N temas
+  // 5. Ordenar e selecionar temas
   topicRankings.sort((a, b) => b.ranking - a.ranking);
-  const selectedTopics = topicRankings
-    .slice(0, topicsCount)
-    .map((tr) => tr.topic);
 
-  if (selectedTopics.length === 0) {
+  let selectedTopicsList: string[];
+  if (selectedTopics) {
+    // Modo customizado: usar os temas selecionados pelo usuário, limitado a 5
+    selectedTopicsList = selectedTopics.slice(0, 5);
+  } else {
+    // Modo automatizado: selecionar os top N temas baseado no ranking, limitado a 5
+    selectedTopicsList = topicRankings
+      .slice(0, Math.min(topicsCount ?? 3, 5)) // Usa o número de temas especificado, limitado a 5
+      .map((tr) => tr.topic);
+  }
+
+  if (selectedTopicsList.length === 0) {
     throw new Error("Nenhum tema disponível para gerar a playlist.");
   }
 
-  // 5. Quantidade de questões por tema
-  const questionsPerTopic = Math.ceil(questionsCount / selectedTopics.length);
-
-  // 6. Buscar questões para cada tema, filtrando pelos anos
+  // 6. Buscar todas as questões para cada tema selecionado
   const selectedQuestions: Question[] = [];
+  const selectedQuestionIds = new Set<string>();
 
-  for (const topic of selectedTopics) {
-    // Questões não respondidas ainda
-    const fresh = await db.question.findMany({
+  for (const topic of selectedTopicsList) {
+    // Buscar todas as questões do tema para os anos selecionados
+    const questions = await db.question.findMany({
       where: {
-        topic,
+        topics: { some: { name: topic } },
         year: { in: years },
-        NOT: { playlistItems: { some: { playlist: { userId } } } },
-      },
-      take: questionsPerTopic,
-    });
-    selectedQuestions.push(...fresh);
-
-    // Se faltar, busca também as respondidas
-    if (fresh.length < questionsPerTopic) {
-      const more = await db.question.findMany({
-        where: {
-          topic,
-          year: { in: years },
-          playlistItems: { some: { playlist: { userId } } },
+        NOT: {
+          id: { in: Array.from(selectedQuestionIds) },
         },
-        orderBy: { playlistItems: { _count: "asc" } },
-        take: questionsPerTopic - fresh.length,
-      });
-      selectedQuestions.push(...more);
+      },
+    });
+
+    // Adiciona apenas questões que ainda não foram selecionadas
+    for (const question of questions) {
+      if (!selectedQuestionIds.has(question.id)) {
+        selectedQuestions.push(question);
+        selectedQuestionIds.add(question.id);
+      }
     }
   }
 
-  // 7. Truncar ao total desejado e embaralhar
-  return selectedQuestions
-    .slice(0, questionsCount)
-    .sort(() => Math.random() - 0.5);
+  // 7. Embaralhar as questões e limitar ao número máximo
+  const shuffledQuestions = selectedQuestions.sort(() => Math.random() - 0.5);
+  return maxQuestions
+    ? shuffledQuestions.slice(0, maxQuestions)
+    : shuffledQuestions;
 }
 
 /**
@@ -136,18 +174,24 @@ export async function updateUserTopicInteraction(
   questionId: string,
   isCorrect: boolean,
 ): Promise<void> {
-  const question = await db.question.findUnique({ where: { id: questionId } });
+  const question = await db.question.findUnique({
+    where: { id: questionId },
+    include: { topics: true },
+  });
   if (!question) return;
 
+  const topic = question.topics[0]?.name;
+  if (!topic) return;
+
   const existing = await db.userTopicInteraction.findUnique({
-    where: { userId_topic: { userId, topic: question.topic } },
+    where: { userId_topic: { userId, topic } },
   });
 
   if (existing) {
     const newQuestionsCount = existing.questionsCount + 1;
     const newCorrectCount = existing.correctCount + (isCorrect ? 1 : 0);
     await db.userTopicInteraction.update({
-      where: { userId_topic: { userId, topic: question.topic } },
+      where: { userId_topic: { userId, topic } },
       data: {
         lastSeenAt: new Date(),
         questionsCount: newQuestionsCount,
@@ -159,7 +203,7 @@ export async function updateUserTopicInteraction(
     await db.userTopicInteraction.create({
       data: {
         userId,
-        topic: question.topic,
+        topic,
         lastSeenAt: new Date(),
         questionsCount: 1,
         correctCount: isCorrect ? 1 : 0,
@@ -188,7 +232,7 @@ export async function updateTopicPrevalence(
     },
     select: {
       id: true,
-      topic: true,
+      topics: true,
       type: true,
       year: true,
     },
@@ -208,10 +252,12 @@ export async function updateTopicPrevalence(
     // Agrupar por tema e contar ocorrências
     const topicCounts = typeQuestions.reduce(
       (acc, q) => {
-        if (!acc[q.topic]) {
-          acc[q.topic] = 0;
+        const topic = q.topics[0]?.name;
+        if (!topic) return acc;
+        if (!acc[topic]) {
+          acc[topic] = 0;
         }
-        acc[q.topic] = (acc[q.topic] ?? 0) + 1;
+        acc[topic] = (acc[topic] ?? 0) + 1;
         return acc;
       },
       {} as Record<string, number>,

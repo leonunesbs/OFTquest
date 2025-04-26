@@ -15,13 +15,13 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import Link from "next/link";
 import { Progress } from "~/components/ui/progress";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { redirect } from "next/navigation";
 
 export default async function PlaylistResultsPage({
   params,
@@ -36,7 +36,7 @@ export default async function PlaylistResultsPage({
     include: {
       items: {
         include: {
-          question: { include: { options: true } },
+          question: { include: { options: true, topics: true } },
         },
       },
     },
@@ -46,6 +46,9 @@ export default async function PlaylistResultsPage({
 
   const items = playlist.items;
   const total = items.length;
+  const answeredCount = items.filter(
+    (item) => item.selectedOptionId !== null,
+  ).length;
   const correctCount = items.filter((item) => {
     const sel = item.selectedOptionId;
     if (!sel) return false;
@@ -53,18 +56,24 @@ export default async function PlaylistResultsPage({
     return opt?.isCorrect;
   }).length;
 
-  const accuracy = total > 0 ? (correctCount / total) * 100 : 0;
+  const accuracy = answeredCount > 0 ? (correctCount / answeredCount) * 100 : 0;
 
   // Métricas por tema
   const metricsByTopic = items.reduce(
     (acc, item) => {
-      const topic = item.question.topic;
+      const topics = item.question.topics.map((t) => t.name);
       const sel = item.selectedOptionId;
-      if (!acc[topic]) acc[topic] = { answered: 0, correct: 0 };
-      if (sel) {
-        acc[topic].answered++;
-        const opt = item.question.options.find((o) => o.id === sel);
-        if (opt?.isCorrect) acc[topic].correct++;
+      const isCorrect = sel
+        ? item.question.options.find((o) => o.id === sel)?.isCorrect
+        : false;
+
+      // Para cada tema, incrementa apenas uma vez
+      for (const topic of topics) {
+        if (!acc[topic]) acc[topic] = { answered: 0, correct: 0 };
+        if (sel) {
+          acc[topic].answered++;
+          if (isCorrect) acc[topic].correct++;
+        }
       }
       return acc;
     },
@@ -160,7 +169,9 @@ export default async function PlaylistResultsPage({
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Erros</span>
-                <Badge variant="destructive">{total - correctCount}</Badge>
+                <Badge variant="destructive">
+                  {answeredCount - correctCount}
+                </Badge>
               </div>
             </div>
           </CardContent>
@@ -194,11 +205,18 @@ export default async function PlaylistResultsPage({
                       </span>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Tema: {item.question.topic}
+                      Tema:{" "}
+                      {item.question.topics.map((t) => t.name).join(", ") ||
+                        "Sem tema"}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {wasCorrect ? (
+                    {!sel ? (
+                      <Badge variant="outline" className="gap-1">
+                        <Clock className="h-3 w-3" />
+                        Não respondida
+                      </Badge>
+                    ) : wasCorrect ? (
                       <Badge variant="default" className="gap-1">
                         <Check className="h-3 w-3" />
                         Correta

@@ -71,6 +71,7 @@ export const questionRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           options: true,
+          topics: true,
         },
       });
 
@@ -79,11 +80,13 @@ export const questionRouter = createTRPCRouter({
 
   // Obter lista de temas disponíveis
   getTopics: protectedProcedure.query(async ({ ctx }) => {
-    const topics = await ctx.db.question.groupBy({
-      by: ["topic"],
+    const topics = await ctx.db.topic.findMany({
+      select: {
+        name: true,
+      },
     });
 
-    return topics.map((t) => t.topic);
+    return topics.map((t) => t.name);
   }),
 
   // Criar nova questão
@@ -97,11 +100,11 @@ export const questionRouter = createTRPCRouter({
         subtopic: z.string().optional(),
         statement: z.string(),
         explanation: z.string(),
-        image: z.string().optional(),
+        images: z.array(z.string()).optional(),
         options: z.array(
           z.object({
             text: z.string(),
-            image: z.string().optional(),
+            images: z.array(z.string()).optional(),
             isCorrect: z.boolean(),
           }),
         ),
@@ -119,21 +122,24 @@ export const questionRouter = createTRPCRouter({
           year: input.year,
           type: input.type,
           number: input.number,
-          topic: input.topic,
           subtopic: input.subtopic,
           statement: input.statement,
           explanation: input.explanation,
-          image: input.image,
+          images: input.images ?? [],
+          topics: {
+            connect: input.topic.split(", ").map((name) => ({ name })),
+          },
           options: {
             create: input.options.map((option) => ({
               text: option.text,
-              image: option.image,
+              images: option.images ?? [],
               isCorrect: option.isCorrect,
             })),
           },
         },
         include: {
           options: true,
+          topics: true,
         },
       });
 
@@ -152,12 +158,12 @@ export const questionRouter = createTRPCRouter({
         subtopic: z.string().optional(),
         statement: z.string(),
         explanation: z.string(),
-        image: z.string().optional(),
+        images: z.array(z.string()).optional(),
         options: z.array(
           z.object({
             id: z.string().optional(),
             text: z.string(),
-            image: z.string().optional(),
+            images: z.array(z.string()).optional(),
             isCorrect: z.boolean(),
           }),
         ),
@@ -178,11 +184,13 @@ export const questionRouter = createTRPCRouter({
             year: input.year,
             type: input.type,
             number: input.number,
-            topic: input.topic,
             subtopic: input.subtopic,
             statement: input.statement,
             explanation: input.explanation,
-            image: input.image,
+            images: input.images ?? [],
+            topics: {
+              set: input.topic.split(", ").map((name) => ({ name })),
+            },
           },
         });
 
@@ -196,7 +204,7 @@ export const questionRouter = createTRPCRouter({
           data: input.options.map((option) => ({
             questionId: input.id,
             text: option.text,
-            image: option.image,
+            images: option.images ?? [],
             isCorrect: option.isCorrect,
           })),
         });

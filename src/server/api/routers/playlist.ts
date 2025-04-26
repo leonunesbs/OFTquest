@@ -5,10 +5,18 @@ import {
   updateUserTopicInteraction,
 } from "~/server/services/playlistService";
 
-import { db } from "~/server/db";
 import { z } from "zod";
+import { db } from "~/server/db";
 
 export const playlistRouter = createTRPCRouter({
+  // Get available topics
+  getAvailableTopics: protectedProcedure.query(async ({ ctx }) => {
+    const topics = await ctx.db.topic.findMany({
+      orderBy: { name: "asc" },
+    });
+    return topics;
+  }),
+
   // Obter uma playlist específica com suas questões
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -19,7 +27,7 @@ export const playlistRouter = createTRPCRouter({
         include: {
           items: {
             include: {
-              question: { include: { options: true } },
+              question: { include: { options: true, topics: true } },
             },
             orderBy: { questionId: "asc" },
           },
@@ -32,7 +40,9 @@ export const playlistRouter = createTRPCRouter({
   generate: protectedProcedure
     .input(
       z.object({
-        topicsCount: z.number().min(1).max(20),
+        mode: z.enum(["automated", "custom"]),
+        topicsCount: z.number().min(1).max(20).optional(),
+        selectedTopics: z.array(z.string()).optional(),
         questionsCount: z.number().min(1).max(100),
         years: z.array(z.number()).min(1, "Selecione ao menos um ano"),
       }),
@@ -43,9 +53,10 @@ export const playlistRouter = createTRPCRouter({
       // Passa também os anos para o serviço
       const questions = await generatePlaylist(
         userId,
-        input.topicsCount,
-        input.questionsCount,
+        input.mode === "automated" ? input.topicsCount : undefined,
         input.years,
+        input.mode === "custom" ? input.selectedTopics : undefined,
+        input.questionsCount,
       );
 
       const playlist = await ctx.db.playlist.create({
@@ -203,13 +214,78 @@ export const playlistRouter = createTRPCRouter({
         throw error;
       }
     }),
+
+  getTopicRankings: protectedProcedure.query(async ({ ctx }) => {
+    // 1. Obter prevalências de todos os temas
+    const topicPrevalences = await ctx.db.topicPrevalence.findMany();
+
+    // 2. Agrupar por ano e tipo de prova
+    const topicsByYearAndType = topicPrevalences.reduce(
+      (acc, tp) => {
+        const year = tp.year;
+        if (!acc[year]) {
+          acc[year] = {
+            teorica1: [],
+            teorica2: [],
+            teoricoPratica: [],
+          };
+        }
+        const examType = tp.examType.toLowerCase();
+        if (examType.includes("teorica-1")) {
+          acc[year].teorica1.push({
+            topic: tp.topic,
+            prevalence: tp.prevalence,
+          });
+        } else if (examType.includes("teorica-2")) {
+          acc[year].teorica2.push({
+            topic: tp.topic,
+            prevalence: tp.prevalence,
+          });
+        } else if (examType.includes("teorico-pratica")) {
+          acc[year].teoricoPratica.push({
+            topic: tp.topic,
+            prevalence: tp.prevalence,
+          });
+        }
+        return acc;
+      },
+      {} as Record<
+        number,
+        {
+          teorica1: Array<{ topic: string; prevalence: number }>;
+          teorica2: Array<{ topic: string; prevalence: number }>;
+          teoricoPratica: Array<{ topic: string; prevalence: number }>;
+        }
+      >,
+    );
+
+    // 3. Ordenar anos e temas por prevalência
+    const sortedYears = Object.keys(topicsByYearAndType)
+      .map(Number)
+      .sort((a, b) => b - a);
+
+    return sortedYears.map((year) => ({
+      year,
+      examTypes: {
+        teorica1: topicsByYearAndType[year]?.teorica1?.sort(
+          (a, b) => b.prevalence - a.prevalence,
+        ),
+        teorica2: topicsByYearAndType[year]?.teorica2?.sort(
+          (a, b) => b.prevalence - a.prevalence,
+        ),
+        teoricoPratica: topicsByYearAndType[year]?.teoricoPratica?.sort(
+          (a, b) => b.prevalence - a.prevalence,
+        ),
+      },
+    }));
+  }),
 });
 
 // Atualiza métricas da playlist
 async function updatePlaylistMetrics(playlistId: string): Promise<void> {
   const playlistItems = await db.playlistItem.findMany({
     where: { playlistId },
-    include: { question: { include: { options: true } } },
+    include: { question: { include: { options: true, topics: true } } },
   });
 
   const answeredItems = playlistItems.filter(
@@ -230,17 +306,19 @@ async function updatePlaylistMetrics(playlistId: string): Promise<void> {
   const metricsByTopic: Record<string, { correct: number; answered: number }> =
     {};
   for (const item of playlistItems) {
-    const topic = item.question.topic;
-    if (!metricsByTopic[topic])
-      metricsByTopic[topic] = { correct: 0, answered: 0 };
-    if (item.selectedOptionId) {
-      metricsByTopic[topic].answered++;
-      if (
-        item.question.options.some(
-          (o) => o.id === item.selectedOptionId && o.isCorrect,
-        )
-      ) {
-        metricsByTopic[topic].correct++;
+    const topics = item.question.topics.map((t) => t.name);
+    for (const topic of topics) {
+      if (!metricsByTopic[topic])
+        metricsByTopic[topic] = { correct: 0, answered: 0 };
+      if (item.selectedOptionId) {
+        metricsByTopic[topic].answered++;
+        if (
+          item.question.options.some(
+            (o) => o.id === item.selectedOptionId && o.isCorrect,
+          )
+        ) {
+          metricsByTopic[topic].correct++;
+        }
       }
     }
   }

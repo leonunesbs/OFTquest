@@ -11,7 +11,7 @@ import PlaylistForm, { availableYears } from "./PlaylistForm";
 export default function CreatePlaylistPage() {
   return (
     <div>
-      <Card className="mx-auto max-w-lg">
+      <Card className="mx-auto max-w-2xl">
         <CardHeader>
           <CardTitle>Criar Nova Playlist</CardTitle>
           <CardDescription>

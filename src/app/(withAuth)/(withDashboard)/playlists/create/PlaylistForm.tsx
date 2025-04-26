@@ -1,6 +1,7 @@
 // src/app/playlists/create/PlaylistsForm.tsx
 "use client";
 
+import { Loader2, Lock, Sparkles } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -11,18 +12,18 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 
-import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Label } from "~/components/ui/label";
-import { Loader2 } from "lucide-react";
-import { Slider } from "~/components/ui/slider";
-import { api } from "~/trpc/react";
-import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useToast } from "~/hooks/use-toast";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Label } from "~/components/ui/label";
+import { Slider } from "~/components/ui/slider";
+import { useToast } from "~/hooks/use-toast";
+import { api } from "~/trpc/react";
 
 export const availableYears = Array.from(
   { length: 2025 - 2006 + 1 },
@@ -30,15 +31,18 @@ export const availableYears = Array.from(
 );
 
 const formSchema = z.object({
+  mode: z.enum(["automated", "custom"]),
+  selectedTopics: z.array(z.string()).optional(),
   topicsCount: z
     .number()
-    .min(1, "Selecione pelo menos 1 tema")
-    .max(20, "Máximo de 20 temas"),
-  questionsCount: z
-    .number()
-    .min(5, "Mínimo de 5 questões")
-    .max(100, "Máximo de 100 questões"),
+    .min(1, "Mínimo de 1 tema")
+    .max(10, "Máximo de 10 temas")
+    .optional(),
   years: z.array(z.number()).min(1, "Selecione pelo menos um ano de questões"),
+  studyTime: z
+    .number()
+    .min(30, "Mínimo de 30 minutos")
+    .max(240, "Máximo de 4 horas"),
 });
 type FormValues = z.infer<typeof formSchema>;
 
@@ -51,12 +55,16 @@ export default function PlaylistForm({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { data: topics } = api.playlist.getAvailableTopics.useQuery();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      topicsCount: 5,
-      questionsCount: 20,
+      mode: "automated",
+      selectedTopics: [],
+      topicsCount: 3,
       years: [],
+      studyTime: 60,
     },
   });
 
@@ -81,79 +89,167 @@ export default function PlaylistForm({
 
   function onSubmit(vals: FormValues) {
     setIsSubmitting(true);
+    const questionsCount = Math.floor(vals.studyTime / 3);
     generate.mutate({
-      topicsCount: vals.topicsCount,
-      questionsCount: vals.questionsCount,
+      mode: vals.mode,
+      selectedTopics: vals.mode === "custom" ? vals.selectedTopics : undefined,
+      topicsCount: vals.mode === "automated" ? vals.topicsCount : undefined,
       years: vals.years,
+      questionsCount,
     });
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {/* temas */}
+        {/* modo de geração */}
         <FormField
           control={form.control}
-          name="topicsCount"
+          name="mode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Quantidade de Temas</FormLabel>
+              <FormLabel>Modo de Geração</FormLabel>
               <FormControl>
-                <div className="space-y-2">
-                  <Slider
-                    min={1}
-                    max={20}
-                    step={1}
-                    value={[field.value]}
-                    onValueChange={(v) => field.onChange(v[0])}
-                  />
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">1</span>
-                    <span className="text-sm font-medium">
-                      {field.value} temas
-                    </span>
-                    <span className="text-sm text-muted-foreground">20</span>
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Card
+                    className={`relative cursor-pointer p-4 transition-all ${
+                      field.value === "automated"
+                        ? "border-primary bg-primary/5"
+                        : "hover:border-primary/50"
+                    }`}
+                    onClick={() => field.onChange("automated")}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        <span className="font-medium">Automático</span>
+                      </div>
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Gera uma playlist inteligente baseada no seu desempenho e
+                      nos temas mais relevantes.
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                        IA
+                      </span>
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                        Premium
+                      </span>
+                    </div>
+                  </Card>
+
+                  <Card
+                    className={`cursor-pointer p-4 transition-all ${
+                      field.value === "custom"
+                        ? "border-primary bg-primary/5"
+                        : "hover:border-primary/50"
+                    }`}
+                    onClick={() => field.onChange("custom")}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Personalizado</span>
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Selecione manualmente os temas que deseja incluir na
+                      playlist.
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                        Gratuito
+                      </span>
+                    </div>
+                  </Card>
                 </div>
               </FormControl>
-              <FormDescription>
-                Quantidade de temas diferentes na playlist.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* questões */}
-        <FormField
-          control={form.control}
-          name="questionsCount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Quantidade de Questões</FormLabel>
-              <FormControl>
-                <div className="space-y-2">
-                  <Slider
-                    min={5}
-                    max={100}
-                    step={5}
-                    value={[field.value]}
-                    onValueChange={(v) => field.onChange(v[0])}
-                  />
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">5</span>
-                    <span className="text-sm font-medium">
-                      {field.value} questões
-                    </span>
-                    <span className="text-sm text-muted-foreground">100</span>
+        {/* temas (apenas no modo personalizado) */}
+        {form.watch("mode") === "custom" && (
+          <FormField
+            control={form.control}
+            name="selectedTopics"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Temas</FormLabel>
+                <FormControl>
+                  <div className="grid max-h-64 grid-cols-2 gap-2 overflow-auto">
+                    {topics?.map((topic) => (
+                      <div
+                        key={topic.id}
+                        className="flex items-center space-x-2"
+                      >
+                        <Checkbox
+                          id={`topic-${topic.id}`}
+                          checked={field.value?.includes(topic.name)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              field.onChange([
+                                ...(field.value ?? []),
+                                topic.name,
+                              ]);
+                            } else {
+                              field.onChange(
+                                field.value?.filter((t) => t !== topic.name) ??
+                                  [],
+                              );
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`topic-${topic.id}`}>
+                          {topic.name}
+                        </Label>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              </FormControl>
-              <FormDescription>Total de questões na playlist.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                </FormControl>
+                <FormDescription>
+                  Selecione os temas que deseja incluir na playlist.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {/* temas (apenas no modo automático) */}
+        {form.watch("mode") === "automated" && (
+          <FormField
+            control={form.control}
+            name="topicsCount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Quantidade de Temas</FormLabel>
+                <FormControl>
+                  <div className="space-y-2">
+                    <Slider
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={[field.value ?? 3]}
+                      onValueChange={(v) => field.onChange(v[0])}
+                    />
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">1</span>
+                      <span className="text-sm font-medium">
+                        {field.value} temas
+                      </span>
+                      <span className="text-sm text-muted-foreground">10</span>
+                    </div>
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  Número de temas a serem incluídos na playlist.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* anos */}
         <FormField
@@ -186,6 +282,44 @@ export default function PlaylistForm({
               </FormControl>
               <FormDescription>
                 Filtre questões pelo(s) ano(s) selecionado(s).
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* tempo de estudo */}
+        <FormField
+          control={form.control}
+          name="studyTime"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tempo de Estudo</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  <Slider
+                    min={30}
+                    max={240}
+                    step={30}
+                    value={[field.value]}
+                    onValueChange={(v) => field.onChange(v[0])}
+                  />
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      30 min
+                    </span>
+                    <span className="text-sm font-medium">
+                      {field.value} min
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      4 horas
+                    </span>
+                  </div>
+                </div>
+              </FormControl>
+              <FormDescription>
+                Tempo disponível para estudo. A quantidade de questões será
+                ajustada automaticamente.
               </FormDescription>
               <FormMessage />
             </FormItem>

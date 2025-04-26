@@ -21,11 +21,13 @@ export default async function EditQuestionPage({
 
   // Buscar temas disponíveis no servidor
   try {
-    topicsData = await db.question
-      .groupBy({
-        by: ["topic"],
+    topicsData = await db.topic
+      .findMany({
+        select: {
+          name: true,
+        },
       })
-      .then((topics) => topics.map((t) => t.topic));
+      .then((topics) => topics.map((t) => t.name));
   } catch (error) {
     console.error("Erro ao buscar temas:", error);
   }

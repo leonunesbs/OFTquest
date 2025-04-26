@@ -35,7 +35,7 @@ import { api } from "~/trpc/react";
 const optionSchema = z.object({
   id: z.string().optional(),
   text: z.string().min(1, "O texto da opção é obrigatório"),
-  image: z.string().optional(),
+  images: z.array(z.string()).optional(),
   isCorrect: z.boolean(),
 });
 
@@ -47,7 +47,7 @@ const questionSchema = z.object({
   subtopic: z.string().optional(),
   statement: z.string().min(1, "O enunciado é obrigatório"),
   explanation: z.string().min(1, "A explicação é obrigatória"),
-  image: z.string().optional(),
+  images: z.array(z.string()).optional(),
   options: z
     .array(optionSchema)
     .min(2, "A questão deve ter pelo menos 2 opções")
@@ -62,7 +62,7 @@ type QuestionFormValues = z.infer<typeof questionSchema>;
 // Tipos para os dados recebidos do servidor
 interface QuestionEditFormProps {
   questionData: Prisma.QuestionGetPayload<{
-    include: { options: true };
+    include: { options: true; topics: true };
   }>; // Tipo da questão do banco de dados
   topicsData: string[];
   isEditing: boolean;
@@ -85,21 +85,21 @@ export default function QuestionEditForm({
       year: questionData?.year ?? new Date().getFullYear(),
       type: questionData?.type ?? "Prova Teórica",
       number: questionData?.number ?? 1,
-      topic: questionData?.topic ?? "",
+      topic: questionData?.topics?.map((t) => t.name).join(", ") ?? "",
       subtopic: questionData?.subtopic ?? "",
       statement: questionData?.statement ?? "",
       explanation: questionData?.explanation ?? "",
-      image: questionData?.image ?? "",
+      images: questionData?.images ?? [],
       options: questionData?.options?.map((option) => ({
         id: option.id,
         text: option.text ?? "",
-        image: option.image ?? "",
+        images: option.images ?? [],
         isCorrect: option.isCorrect,
       })) ?? [
-        { text: "", isCorrect: false },
-        { text: "", isCorrect: false },
-        { text: "", isCorrect: false },
-        { text: "", isCorrect: false },
+        { text: "", isCorrect: false, images: [] },
+        { text: "", isCorrect: false, images: [] },
+        { text: "", isCorrect: false, images: [] },
+        { text: "", isCorrect: false, images: [] },
       ],
     },
   });
@@ -159,7 +159,7 @@ export default function QuestionEditForm({
 
   // Função para adicionar uma nova opção
   const addOption = () => {
-    append({ text: "", isCorrect: false, image: "" });
+    append({ text: "", isCorrect: false, images: [] });
   };
 
   // Função para remover uma opção
@@ -278,31 +278,32 @@ export default function QuestionEditForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tema</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tema" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
+                    <FormControl>
+                      <div className="flex flex-wrap gap-2">
                         {topicsData.map((topic) => (
-                          <SelectItem key={topic} value={topic}>
+                          <Button
+                            key={topic}
+                            type="button"
+                            variant={
+                              field.value?.includes(topic)
+                                ? "default"
+                                : "outline"
+                            }
+                            onClick={() => {
+                              const currentTopics = field.value
+                                ? field.value.split(", ")
+                                : [];
+                              const newTopics = currentTopics.includes(topic)
+                                ? currentTopics.filter((t) => t !== topic)
+                                : [...currentTopics, topic];
+                              field.onChange(newTopics.join(", "));
+                            }}
+                          >
                             {topic}
-                          </SelectItem>
+                          </Button>
                         ))}
-                        <SelectItem value="outro">
-                          Outro (adicionar novo)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {field.value === "outro" && (
-                      <Input
-                        className="mt-2"
-                        placeholder="Digite o novo tema"
-                        value=""
-                        onChange={(e) => form.setValue("topic", e.target.value)}
-                      />
-                    )}
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -325,14 +326,20 @@ export default function QuestionEditForm({
 
             <FormField
               control={form.control}
-              name="image"
+              name="images"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL da Imagem (opcional)</FormLabel>
+                  <FormLabel>URLs das Imagens (opcional)</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="https://exemplo.com/imagem.jpg"
+                      placeholder="https://exemplo.com/imagem1.jpg, https://exemplo.com/imagem2.jpg"
+                      onChange={(e) => {
+                        const urls = e.target.value
+                          .split(",")
+                          .map((url) => url.trim());
+                        field.onChange(urls);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -416,7 +423,7 @@ export default function QuestionEditForm({
 
                   <FormField
                     control={form.control}
-                    name={`options.${index}.image`}
+                    name={`options.${index}.images`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>URL da Imagem (opcional)</FormLabel>

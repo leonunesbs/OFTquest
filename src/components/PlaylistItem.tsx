@@ -29,6 +29,7 @@ interface PlaylistItemProps {
           question: {
             include: {
               options: true;
+              topics: true;
             };
           };
         };
@@ -40,6 +41,7 @@ interface PlaylistItemProps {
       question: {
         include: {
           options: true;
+          topics: true;
         };
       };
     };
@@ -127,7 +129,8 @@ export default function PlaylistItem({
               Questão {q.year} – {q.type} – {q.number}
             </CardTitle>
             <CardDescription>
-              Tema: {q.topic} {q.subtopic && `| ${q.subtopic}`}
+              Tema: {q.topics?.map((t) => t.name).join(", ")}{" "}
+              {q.subtopic && `| ${q.subtopic}`}
             </CardDescription>
           </div>
           {answered && !examMode && (
@@ -147,15 +150,16 @@ export default function PlaylistItem({
           className="prose mb-4"
         />
         <div className="flex justify-center">
-          {q.image && (
+          {q.images.map((image, index) => (
             <Image
-              src={`/imagens/${q.image}`}
-              alt="Questão"
+              key={index}
+              src={image}
+              alt={`Questão ${index + 1}`}
               width={400}
               height={300}
               className="rounded"
             />
-          )}
+          ))}
         </div>
         <RadioGroup
           value={selectedOption ?? ""}
@@ -187,15 +191,16 @@ export default function PlaylistItem({
                 }
               >
                 <span dangerouslySetInnerHTML={{ __html: opt.text! }} />
-                {opt.image && (
+                {opt.images.map((image, index) => (
                   <Image
-                    src={`/imagens/${opt.image}`}
-                    alt={opt.text!}
+                    key={index}
+                    src={image}
+                    alt={`${opt.text!} - Imagem ${index + 1}`}
                     width={400}
                     height={300}
                     className="rounded"
                   />
-                )}
+                ))}
               </Label>
             </div>
           ))}

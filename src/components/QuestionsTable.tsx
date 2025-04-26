@@ -34,7 +34,7 @@ interface Question {
   year: number;
   type: string;
   number: number;
-  topic: string;
+  topics: { name: string }[];
   subtopic: string | null;
   statement: string;
   options: { isCorrect: boolean }[];
@@ -154,7 +154,15 @@ export default function QuestionsTable({
                   <TableCell>{question.number}</TableCell>
                   <TableCell>
                     <div>
-                      <Badge variant="outline">{question.topic}</Badge>
+                      {question.topics.map((topic) => (
+                        <Badge
+                          key={topic.name}
+                          variant="outline"
+                          className="mr-1"
+                        >
+                          {topic.name}
+                        </Badge>
+                      ))}
                       {question.subtopic && (
                         <div className="mt-1 text-xs text-muted-foreground">
                           {question.subtopic}

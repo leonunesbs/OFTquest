@@ -39,13 +39,13 @@ export default async function QuestionsPage({
   if (search) {
     where.OR = [
       { statement: { contains: search, mode: "insensitive" } },
-      { topic: { contains: search, mode: "insensitive" } },
+      { topics: { some: { name: { contains: search, mode: "insensitive" } } } },
       { subtopic: { contains: search, mode: "insensitive" } },
     ];
   }
 
   if (topic) {
-    where.topic = topic;
+    where.topics = { some: { name: topic } };
   }
 
   if (year) {
@@ -68,6 +68,7 @@ export default async function QuestionsPage({
           isCorrect: true,
         },
       },
+      topics: true,
     },
   });
 
@@ -76,11 +77,11 @@ export default async function QuestionsPage({
   const totalPages = Math.ceil(totalQuestions / limit);
 
   // Buscar temas para o filtro
-  const topics = await db.question
-    .groupBy({
-      by: ["topic"],
+  const topics = await db.topic
+    .findMany({
+      select: { name: true },
     })
-    .then((topics) => topics.map((t) => t.topic));
+    .then((topics) => topics.map((t) => t.name));
 
   // Buscar anos para o filtro
   const years = await db.question
