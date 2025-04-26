@@ -19,7 +19,7 @@ interface ImportQuestion {
   images: string[];
 }
 
-const CHUNK_SIZE = 50; // Process questions in chunks of 50
+const CHUNK_SIZE = 250; // Process questions in chunks of 50
 
 export async function POST() {
   try {
@@ -74,14 +74,19 @@ export async function POST() {
                 explanation: q.explanation ?? "",
                 images: q.images,
               })),
+              skipDuplicates: true,
             });
 
             // 5. Buscar IDs das questões criadas
             const questionIds = await tx.question.findMany({
               where: {
-                year: { in: chunk.map((q) => q.year) },
-                type: { in: chunk.map((q) => q.type) },
-                number: { in: chunk.map((q) => q.number) },
+                OR: chunk.map((q) => ({
+                  AND: {
+                    year: q.year,
+                    type: q.type,
+                    number: q.number,
+                  },
+                })),
               },
               select: {
                 id: true,
@@ -92,35 +97,45 @@ export async function POST() {
             });
 
             // 6. Conectar questões com seus tópicos
-            await Promise.all(
-              chunk.map(async (q) => {
+            const questionTopicConnections = chunk
+              .map((q) => {
                 const questionId = questionIds.find(
                   (qId) =>
                     qId.year === q.year &&
                     qId.type === q.type &&
                     qId.number === q.number,
                 )?.id;
-                if (!questionId) return;
+
+                if (!questionId || !q.topic) return null;
 
                 const topicIds = q.topic
-                  ? q.topic
-                      .split(", ")
-                      .map((t) => topicMap.get(t.trim())?.id)
-                      .filter((id): id is string => id !== undefined)
-                  : [];
+                  .split(", ")
+                  .map((t) => topicMap.get(t.trim())?.id)
+                  .filter((id): id is string => id !== undefined);
 
-                if (topicIds.length > 0) {
-                  await tx.question.update({
-                    where: { id: questionId },
-                    data: {
-                      topics: {
-                        connect: topicIds.map((id) => ({ id })),
-                      },
-                    },
-                  });
-                }
-              }),
-            );
+                return topicIds.length > 0
+                  ? {
+                      questionId,
+                      topicIds,
+                    }
+                  : null;
+              })
+              .filter(
+                (conn): conn is { questionId: string; topicIds: string[] } =>
+                  conn !== null,
+              );
+
+            // Execute updates sequentially instead of using Promise.all
+            for (const conn of questionTopicConnections) {
+              await tx.question.update({
+                where: { id: conn.questionId },
+                data: {
+                  topics: {
+                    connect: conn.topicIds.map((id) => ({ id })),
+                  },
+                },
+              });
+            }
 
             // Create options for this chunk
             const chunkOptions = chunk.flatMap((q) => {
@@ -135,26 +150,34 @@ export async function POST() {
                   `Failed to find question ID for year ${q.year}, type ${q.type}, number ${q.number}`,
                 );
               }
-              // Filter out options with empty text and image
-              return q.options
+              // Filter out options with empty text and image, and ensure no duplicates
+              const uniqueOptions = new Map<string, QuestionOption>();
+              q.options
                 .filter((opt) => opt.text !== "" || opt.images.length > 0)
-                .map((opt) => ({
-                  questionId,
-                  text: opt.text,
-                  images: opt.images,
-                  isCorrect: opt.isCorrect,
-                }));
+                .forEach((opt) => {
+                  const key = `${opt.text}-${opt.images.join(",")}`;
+                  if (!uniqueOptions.has(key)) {
+                    uniqueOptions.set(key, opt);
+                  }
+                });
+
+              return Array.from(uniqueOptions.values()).map((opt) => ({
+                questionId,
+                text: opt.text,
+                images: opt.images,
+                isCorrect: opt.isCorrect,
+              }));
             });
 
             // Create new options
             await tx.option.createMany({
               data: chunkOptions,
-              skipDuplicates: true, // Skip if option already exists
+              skipDuplicates: true,
             });
           },
           {
-            timeout: 60 * 1000, // 60 seconds timeout per chunk
-            maxWait: 60 * 1000, // 60 seconds max wait per chunk
+            timeout: 10 * 60 * 1000, // 10 minutes timeout per chunk
+            maxWait: 10 * 60 * 1000, // 10 minutes max wait per chunk
           },
         );
       } catch (chunkError) {
@@ -245,11 +268,14 @@ export async function POST() {
           });
         });
 
-        await Promise.all(prevalencePromises);
+        // Execute prevalence updates sequentially instead of using Promise.all
+        for (const promise of prevalencePromises) {
+          await promise;
+        }
       },
       {
-        timeout: 5 * 60 * 1000, // 5 minutes timeout
-        maxWait: 5 * 60 * 1000, // 5 minutes max wait
+        timeout: 10 * 60 * 1000, // 10 minutes timeout
+        maxWait: 10 * 60 * 1000, // 10 minutes max wait
       },
     );
 
