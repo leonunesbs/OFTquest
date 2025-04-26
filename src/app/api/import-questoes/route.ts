@@ -25,7 +25,7 @@ export async function POST() {
   try {
     // Buscar questions.json via HTTP (fetch)
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/questions.json`,
+      `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:6000"}/questions.json`,
     );
 
     if (!response.ok) {
@@ -153,8 +153,8 @@ export async function POST() {
             });
           },
           {
-            timeout: 30 * 1000, // 30 seconds timeout per chunk
-            maxWait: 30 * 1000, // 30 seconds max wait per chunk
+            timeout: 60 * 1000, // 60 seconds timeout per chunk
+            maxWait: 60 * 1000, // 60 seconds max wait per chunk
           },
         );
       } catch (chunkError) {
