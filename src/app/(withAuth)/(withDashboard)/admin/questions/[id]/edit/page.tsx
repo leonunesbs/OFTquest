@@ -15,7 +15,7 @@ export default async function EditQuestionPage({
 
   // Buscar dados no servidor se estiver editando
   let questionData: Prisma.QuestionGetPayload<{
-    include: { options: true };
+    include: { options: true; topics: true };
   }> | null = null;
   let topicsData: string[] = [];
 
@@ -39,6 +39,7 @@ export default async function EditQuestionPage({
         where: { id },
         include: {
           options: true,
+          topics: true,
         },
       });
 
