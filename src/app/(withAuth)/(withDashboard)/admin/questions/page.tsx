@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { type Prisma } from "@prisma/client";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
 import QuestionsFilter from "~/components/QuestionsFilter";
 import QuestionsTable from "~/components/QuestionsTable";
 import { Button } from "~/components/ui/button";
@@ -112,25 +111,21 @@ export default async function QuestionsPage({
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<div>Carregando filtros...</div>}>
-            <QuestionsFilter
-              topics={topics}
-              years={years}
-              types={types}
-              currentFilters={{ search, topic, year, type }}
-            />
-          </Suspense>
+          <QuestionsFilter
+            topics={topics}
+            years={years}
+            types={types}
+            currentFilters={{ search, topic, year, type }}
+          />
         </CardContent>
       </Card>
 
-      <Suspense fallback={<div>Carregando questões...</div>}>
-        <QuestionsTable
-          questions={questions}
-          currentPage={page}
-          totalPages={totalPages}
-          currentFilters={{ search, topic, year, type, limit }}
-        />
-      </Suspense>
+      <QuestionsTable
+        questions={questions}
+        currentPage={page}
+        totalPages={totalPages}
+        currentFilters={{ search, topic, year, type, limit }}
+      />
     </div>
   );
 }
