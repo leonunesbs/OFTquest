@@ -147,6 +147,7 @@ export default function QuestionEditForm({
 
   // Função para lidar com a submissão do formulário
   const onSubmit = (values: QuestionFormValues) => {
+    console.log("log");
     if (isEditing) {
       updateQuestion.mutate({
         id,

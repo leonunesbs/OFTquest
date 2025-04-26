@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import Table from "@tiptap/extension-table";
 import TableCell from "@tiptap/extension-table-cell";
@@ -15,6 +16,7 @@ import {
   RxFontBold,
   RxFontItalic,
   RxHeading,
+  RxImage,
   RxStrikethrough,
   RxTextAlignCenter,
   RxTextAlignJustify,
@@ -196,6 +198,35 @@ function MenuBar({ editor }: { editor?: Editor }) {
           <RxTextAlignJustify size="1rem mx-1" />
         </Button>
       </div>
+      <Separator orientation={"vertical"} />
+      <div className="flex gap-2">
+        <Button
+          tabIndex={1}
+          type="button"
+          size="icon"
+          variant="ghost"
+          aria-label="Inserir imagem"
+          onClick={() => {
+            const url = window.prompt("URL da imagem:");
+            if (url) {
+              const alt = window.prompt("Texto alternativo (alt):");
+              const title = window.prompt("Título da imagem (opcional):");
+
+              editor
+                .chain()
+                .focus()
+                .setImage({
+                  src: url,
+                  alt: alt ?? undefined,
+                  title: title ?? undefined,
+                })
+                .run();
+            }
+          }}
+        >
+          <RxImage size="1rem mx-1" />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -227,7 +258,6 @@ export function TiptapEditor({ content, onChange, placeholder }: TiptapProps) {
           levels: [1, 2, 3],
         },
       }),
-
       Placeholder.configure({
         placeholder,
       }),
@@ -235,6 +265,12 @@ export function TiptapEditor({ content, onChange, placeholder }: TiptapProps) {
         types: ["heading", "paragraph"],
       }),
       Underline,
+      Image.configure({
+        HTMLAttributes: {
+          class: "max-w-full h-auto rounded-lg",
+        },
+        allowBase64: true,
+      }),
       Table.configure({
         resizable: true,
       }),

@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -59,6 +60,9 @@ export default function ViewQuestionPage() {
         <Card>
           <CardHeader>
             <CardTitle>Questão não encontrada</CardTitle>
+            <CardDescription>
+              A questão que você está procurando não existe ou foi removida.
+            </CardDescription>
           </CardHeader>
           <CardFooter>
             <Button onClick={() => router.push("/admin/questions")}>
@@ -71,26 +75,33 @@ export default function ViewQuestionPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Visualizar Questão</h1>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/admin/questions")}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/admin/questions/${id}/edit`)}
-          >
-            <Edit className="mr-2 h-4 w-4" /> Editar
-          </Button>
-          <Button variant="destructive" onClick={handleDelete}>
-            <Trash2 className="mr-2 h-4 w-4" /> Excluir
-          </Button>
-        </div>
+    <div className="">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Visualizar Questão
+        </h1>
+        <p className="text-muted-foreground">
+          Detalhes e informações da questão {question.year} - {question.type} -{" "}
+          {question.number}
+        </p>
+      </div>
+
+      <div className="mb-6 flex justify-end gap-2">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/admin/questions")}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => router.push(`/admin/questions/${id}/edit`)}
+        >
+          <Edit className="mr-2 h-4 w-4" /> Editar
+        </Button>
+        <Button variant="destructive" onClick={handleDelete}>
+          <Trash2 className="mr-2 h-4 w-4" /> Excluir
+        </Button>
       </div>
 
       <Card className="mb-6">
@@ -98,10 +109,10 @@ export default function ViewQuestionPage() {
           <CardTitle>
             Questão {question.year} - {question.type} - {question.number}
           </CardTitle>
-          <div className="text-sm text-muted-foreground">
+          <CardDescription>
             Tema: {question.topics?.map((t) => t.name).join(", ")}
             {question.subtopic && ` | Subtema: ${question.subtopic}`}
-          </div>
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div
