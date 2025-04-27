@@ -170,7 +170,6 @@ export default function PlaylistItem({
           disabled={answered}
           aria-label={`Opções para questão ${q.year} - ${q.type} - ${q.number}`}
           role="radiogroup"
-          className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           {q.options.map((opt) => (
             <div
@@ -188,7 +187,7 @@ export default function PlaylistItem({
               className={
                 `flex items-start space-x-2 rounded-md border p-4 ` +
                 (!answered
-                  ? "cursor-pointer hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:hover:bg-gray-800"
+                  ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
                   : "") +
                 (answered && !examMode && opt.isCorrect
                   ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950"
@@ -204,7 +203,6 @@ export default function PlaylistItem({
                 value={opt.id}
                 id={opt.id}
                 aria-label={`Opção ${opt.id}`}
-                className="focus:ring-2 focus:ring-primary"
               />
               <Label
                 htmlFor={opt.id}
@@ -253,7 +251,6 @@ export default function PlaylistItem({
             aria-label={
               answered ? "Resposta já confirmada" : "Confirmar resposta"
             }
-            className="focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             {answerMutation.isPending ? (
               <>
@@ -273,7 +270,6 @@ export default function PlaylistItem({
                   ? "Não é possível finalizar sem respostas"
                   : "Finalizar playlist"
               }
-              className="focus:ring-2 focus:ring-primary focus:ring-offset-2"
             >
               Finalizar
             </Button>
@@ -282,7 +278,6 @@ export default function PlaylistItem({
             <Button
               variant="outline"
               aria-label="Ver questão no painel administrativo"
-              className="focus:ring-2 focus:ring-primary focus:ring-offset-2"
             >
               Ver no Admin
             </Button>
