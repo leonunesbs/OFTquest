@@ -149,18 +149,21 @@ export default function PlaylistItem({
           dangerouslySetInnerHTML={{ __html: q.statement }}
           className="prose mb-4"
         />
-        <div className="flex justify-center">
-          {q.images.map((image, index) => (
-            <Image
-              key={index}
-              src={image}
-              alt={`Questão ${index + 1}`}
-              width={400}
-              height={300}
-              className="rounded"
-            />
-          ))}
-        </div>
+        {q.images.length > 0 && (
+          <div className="my-4 flex flex-wrap justify-center gap-4">
+            {q.images.map((image, index) => (
+              <Image
+                key={index}
+                src={image}
+                alt={`Questão ${index + 1}`}
+                width={400}
+                height={300}
+                className="rounded"
+              />
+            ))}
+          </div>
+        )}
+
         <RadioGroup
           value={selectedOption ?? ""}
           onValueChange={setSelectedOption}
@@ -191,16 +194,20 @@ export default function PlaylistItem({
                 }
               >
                 <span dangerouslySetInnerHTML={{ __html: opt.text! }} />
-                {opt.images.map((image, index) => (
-                  <Image
-                    key={index}
-                    src={image}
-                    alt={`${opt.text!} - Imagem ${index + 1}`}
-                    width={400}
-                    height={300}
-                    className="rounded"
-                  />
-                ))}
+                {opt.images.length > 0 && (
+                  <div className="my-4 flex flex-wrap justify-center gap-4">
+                    {opt.images.map((image, index) => (
+                      <Image
+                        key={index}
+                        src={image}
+                        alt={`${opt.text!} - Imagem ${index + 1}`}
+                        width={400}
+                        height={300}
+                        className="rounded"
+                      />
+                    ))}
+                  </div>
+                )}
               </Label>
             </div>
           ))}

@@ -15,13 +15,13 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 
-import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import Link from "next/link";
 import { Progress } from "~/components/ui/progress";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { redirect } from "next/navigation";
 
 export default async function PlaylistResultsPage({
   params,
@@ -93,7 +93,7 @@ export default async function PlaylistResultsPage({
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="bg-primary/5">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-primary" />
@@ -115,7 +115,7 @@ export default async function PlaylistResultsPage({
           </CardContent>
         </Card>
 
-        <Card className="bg-primary/5">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary" />
@@ -150,7 +150,7 @@ export default async function PlaylistResultsPage({
           </CardContent>
         </Card>
 
-        <Card className="bg-primary/5">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-primary" />
