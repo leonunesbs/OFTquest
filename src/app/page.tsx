@@ -238,11 +238,11 @@ export default async function Home() {
               Acesse gratuitamente nosso banco de questões ou faça upgrade para
               aproveitar todos os recursos premium.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="flex flex-col items-center gap-2">
               {session ? (
                 <>
                   <Button asChild variant="default">
-                    <Link href="/aluno">Área do Aluno</Link>
+                    <Link href="/dashboard">Painel</Link>
                   </Button>
                   <div className="flex flex-col items-center gap-2">
                     <p className="text-sm text-muted-foreground">
