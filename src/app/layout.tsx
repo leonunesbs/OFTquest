@@ -45,20 +45,20 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://oftquest.vercel.app",
-    languages: { "pt-BR": "https://oftquest.vercel.app" },
+    canonical: "https://oftquest.com.br",
+    languages: { "pt-BR": "https://oftquest.com.br" },
   },
   openGraph: {
     title: "OFTquest - Questões Comentadas para o CBO",
     description:
       "Prepare-se para a prova de título do CBO com o OFTquest. Acesse questões detalhadamente comentadas, acompanhe seu progresso e otimize seus estudos com nossa plataforma especializada para a prova de título em oftalmologia.",
-    url: "https://oftquest.vercel.app",
+    url: "https://oftquest.com.br",
     siteName: "OFTquest",
     locale: "pt_BR",
     type: "website",
     images: [
       {
-        url: "https://oftquest.vercel.app/oftquest-logo.png",
+        url: "https://oftquest.com.br/oftquest-logo.png",
         width: 512,
         height: 512,
         alt: "Logo do OFTquest - Plataforma de Estudos em Oftalmologia",
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
     title: "OFTquest - Questões Comentadas para o CBO",
     description:
       "OFTquest oferece questões detalhadamente comentadas para a prova de título do CBO. Prepare-se com questões específicas, explicações detalhadas e recursos exclusivos para otimizar sua preparação. Comece agora!",
-    images: ["https://oftquest.vercel.app/oftquest-logo.png"],
+    images: ["https://oftquest.com.br/oftquest-logo.png"],
   },
   manifest: "/favicon/site.webmanifest",
   icons: {
@@ -137,8 +137,8 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Organization",
               name: "OFTQuest",
-              url: "https://oftquest.vercel.app",
-              logo: "https://oftquest.vercel.app/oftquest-logo.png",
+              url: "https://oftquest.com.br",
+              logo: "https://oftquest.com.br/oftquest-logo.png",
               sameAs: [
                 "https://github.com/leonunesbs",
                 "https://twitter.com/leonunesbs",

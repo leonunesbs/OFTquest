@@ -58,10 +58,10 @@ export async function generateMetadata({
       description,
       images:
         currentItem.question.images[0] ??
-        "https://oftquest.vercel.app/oftquest-logo.png",
+        "https://oftquest.com.br/oftquest-logo.png",
     },
     alternates: {
-      canonical: `https://oftquest.vercel.app/playlists/${(await params).id}/${(await params).playlistItemId}`,
+      canonical: `https://oftquest.com.br/playlists/${(await params).id}/${(await params).playlistItemId}`,
     },
   };
 }
@@ -102,10 +102,10 @@ export default async function PlaylistItemPage({
     author: {
       "@type": "Organization",
       name: "OFTQuest",
-      url: "https://oftquest.vercel.app",
+      url: "https://oftquest.com.br",
       logo: {
         "@type": "ImageObject",
-        url: "https://oftquest.vercel.app/oftquest-logo.png",
+        url: "https://oftquest.com.br/oftquest-logo.png",
       },
     },
     publisher: {
@@ -113,14 +113,14 @@ export default async function PlaylistItemPage({
       name: "OFTQuest",
       logo: {
         "@type": "ImageObject",
-        url: "https://oftquest.vercel.app/oftquest-logo.png",
+        url: "https://oftquest.com.br/oftquest-logo.png",
       },
     },
     datePublished: currentItem.question.createdAt.toISOString(),
     dateModified: currentItem.question.updatedAt.toISOString(),
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://oftquest.vercel.app/playlists/${id}/${playlistItemId}`,
+      "@id": `https://oftquest.com.br/playlists/${id}/${playlistItemId}`,
     },
     about: {
       "@type": "Thing",
@@ -139,7 +139,7 @@ export default async function PlaylistItemPage({
     isPartOf: {
       "@type": "CollectionPage",
       name: playlist.name,
-      url: `https://oftquest.vercel.app/playlists/${id}`,
+      url: `https://oftquest.com.br/playlists/${id}`,
     },
     image: currentItem.question.images.map((image, index) => ({
       "@type": "ImageObject",

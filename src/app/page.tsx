@@ -92,7 +92,7 @@ export default async function Home() {
     brand: {
       "@type": "Brand",
       name: "OFTQuest",
-      logo: "https://oftquest.vercel.app/oftquest-logo.png",
+      logo: "https://oftquest.com.br/oftquest-logo.png",
       slogan: "Sua plataforma de estudos em oftalmologia",
     },
   };

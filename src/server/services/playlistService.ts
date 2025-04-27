@@ -104,6 +104,8 @@ export async function generatePlaylist(
         invertedAccuracy * ACCURACY_WEIGHT +
         normalizedTimeSince * TIME_WEIGHT;
 
+      console.log(topic, ranking);
+
       return {
         topic,
         ranking,
