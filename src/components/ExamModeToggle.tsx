@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { setExamMode } from "~/app/(withAuth)/(withDashboard)/playlists/[id]/[playlistItemId]/actions";
+import { setExamMode } from "~/app/(withDashboard)/(withAuth)/playlists/[id]/[playlistItemId]/actions";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 
