@@ -1,7 +1,7 @@
 import { type Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Playlists | OFTQuest",
+  title: "Playlists",
   description: "Gerencie suas playlists de questões para prática e estudo.",
 };
 

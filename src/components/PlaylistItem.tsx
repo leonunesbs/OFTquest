@@ -168,14 +168,28 @@ export default function PlaylistItem({
           value={selectedOption ?? ""}
           onValueChange={setSelectedOption}
           disabled={answered}
+          aria-label={`Opções para questão ${q.year} - ${q.type} - ${q.number}`}
+          role="radiogroup"
+          className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           {q.options.map((opt) => (
             <div
               key={opt.id}
               onClick={() => !answered && setSelectedOption(opt.id)}
+              onKeyDown={(e) => {
+                if (!answered && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  setSelectedOption(opt.id);
+                }
+              }}
+              role="radio"
+              aria-checked={selectedOption === opt.id}
+              tabIndex={0}
               className={
                 `flex items-start space-x-2 rounded-md border p-4 ` +
-                (!answered ? "cursor-pointer" : "") +
+                (!answered
+                  ? "cursor-pointer hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:hover:bg-gray-800"
+                  : "") +
                 (answered && !examMode && opt.isCorrect
                   ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950"
                   : answered &&
@@ -186,7 +200,12 @@ export default function PlaylistItem({
                     : "")
               }
             >
-              <RadioGroupItem value={opt.id} id={opt.id} />
+              <RadioGroupItem
+                value={opt.id}
+                id={opt.id}
+                aria-label={`Opção ${opt.id}`}
+                className="focus:ring-2 focus:ring-primary"
+              />
               <Label
                 htmlFor={opt.id}
                 className={
@@ -213,7 +232,11 @@ export default function PlaylistItem({
           ))}
         </RadioGroup>
         {answered && !examMode && (
-          <div className="mt-4 rounded bg-gray-50 p-4 dark:bg-gray-800">
+          <div
+            className="mt-4 rounded bg-gray-50 p-4 dark:bg-gray-800"
+            role="region"
+            aria-label="Explicação da resposta"
+          >
             <h3 className="mb-2 font-bold">Explicação</h3>
             <div
               dangerouslySetInnerHTML={{ __html: q.explanation }}
@@ -227,23 +250,42 @@ export default function PlaylistItem({
           <Button
             onClick={confirmAnswer}
             disabled={answered || !selectedOption || answerMutation.isPending}
+            aria-label={
+              answered ? "Resposta já confirmada" : "Confirmar resposta"
+            }
+            className="focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             {answerMutation.isPending ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Confirmando...
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                <span>Confirmando...</span>
               </>
             ) : (
               "Confirmar"
             )}
           </Button>
           <Link href={`/playlists/${playlist.id}/results`} passHref>
-            <Button variant="outline" disabled={answeredCount === 0}>
+            <Button
+              variant="outline"
+              disabled={answeredCount === 0}
+              aria-label={
+                answeredCount === 0
+                  ? "Não é possível finalizar sem respostas"
+                  : "Finalizar playlist"
+              }
+              className="focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
               Finalizar
             </Button>
           </Link>
           <Link href={`/admin/questions/${q.id}`} passHref>
-            <Button variant="outline">Ver no Admin</Button>
+            <Button
+              variant="outline"
+              aria-label="Ver questão no painel administrativo"
+              className="focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
+              Ver no Admin
+            </Button>
           </Link>
         </div>
       </CardFooter>
