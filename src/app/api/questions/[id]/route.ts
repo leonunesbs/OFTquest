@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "~/server/db";
 
 export async function GET(
-  request: Request,
-  context: { params: { id: string } },
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const question = await db.question.findUnique({
       where: {
-        id: context.params.id,
+        id,
       },
       include: {
         options: true,
@@ -44,16 +45,17 @@ interface UpdateQuestionBody {
 }
 
 export async function PATCH(
-  request: Request,
-  context: { params: { id: string } },
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const body = (await request.json()) as UpdateQuestionBody;
     const { title, description, options, topics } = body;
 
     const question = await db.question.update({
       where: {
-        id: context.params.id,
+        id,
       },
       data: {
         ...(title && { title }),
