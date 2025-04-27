@@ -3,12 +3,12 @@ import { db } from "~/server/db";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } },
+  context: { params: { id: string } },
 ) {
   try {
     const question = await db.question.findUnique({
       where: {
-        id: params.id,
+        id: context.params.id,
       },
       include: {
         options: true,
@@ -45,7 +45,7 @@ interface UpdateQuestionBody {
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  context: { params: { id: string } },
 ) {
   try {
     const body = (await request.json()) as UpdateQuestionBody;
@@ -53,7 +53,7 @@ export async function PATCH(
 
     const question = await db.question.update({
       where: {
-        id: params.id,
+        id: context.params.id,
       },
       data: {
         ...(title && { title }),
