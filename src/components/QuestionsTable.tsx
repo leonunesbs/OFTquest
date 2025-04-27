@@ -1,18 +1,8 @@
 // src/app/admin/questions/QuestionsTable.tsx
 "use client";
 
-import { ChevronLeft, ChevronRight, Edit, Eye, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "~/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -23,11 +13,8 @@ import {
 } from "~/components/ui/table";
 
 import Link from "next/link";
-import { useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { useToast } from "~/hooks/use-toast";
-import { api } from "~/trpc/react";
 
 interface Question {
   id: string;
@@ -61,29 +48,6 @@ export default function QuestionsTable({
 }: QuestionsTableProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { toast } = useToast();
-
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
-
-  // Mutation para excluir questão
-  const deleteQuestion = api.question.delete.useMutation({
-    onSuccess: () => {
-      toast({
-        title: "Questão excluída",
-        description: "A questão foi excluída com sucesso.",
-      });
-      // Recarregar a página para atualizar a lista
-      router.refresh();
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro ao excluir questão",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   // Função para navegar para uma página específica
   const goToPage = (page: number) => {
@@ -105,21 +69,6 @@ export default function QuestionsTable({
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // Função para confirmar exclusão
-  const confirmDelete = (id: string) => {
-    setQuestionToDelete(id);
-    setDeleteDialogOpen(true);
-  };
-
-  // Função para executar exclusão
-  const handleDelete = () => {
-    if (questionToDelete) {
-      deleteQuestion.mutate({ id: questionToDelete });
-      setDeleteDialogOpen(false);
-      setQuestionToDelete(null);
-    }
-  };
-
   return (
     <>
       <div className="rounded-md border">
@@ -130,13 +79,13 @@ export default function QuestionsTable({
               <TableHead className="w-[150px]">Tipo</TableHead>
               <TableHead className="w-[80px]">Número</TableHead>
               <TableHead className="w-[200px]">Tema</TableHead>
-              <TableHead className="w-[150px]">Ações</TableHead>
+              <TableHead className="w-[100px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {questions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center">
+                <TableCell colSpan={5} className="py-8 text-center">
                   Nenhuma questão encontrada.
                 </TableCell>
               </TableRow>
@@ -171,25 +120,11 @@ export default function QuestionsTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex space-x-2">
-                      <Link href={`/admin/questions/${question.id}`}>
-                        <Button variant="outline" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Link href={`/admin/questions/${question.id}/edit`}>
-                        <Button variant="outline" size="icon">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => confirmDelete(question.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
+                    <Link href={`/questions/${question.id}`}>
+                      <Button variant="outline" size="icon">
+                        <Eye className="h-4 w-4" />
                       </Button>
-                    </div>
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))
@@ -247,24 +182,6 @@ export default function QuestionsTable({
           </div>
         </div>
       )}
-
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir esta questão? Esta ação não pode
-              ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
-              {deleteQuestion.isPending ? "Excluindo..." : "Excluir"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

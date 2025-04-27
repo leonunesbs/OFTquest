@@ -33,12 +33,22 @@ const data = {
       items: [],
     },
     {
-      title: "Admin",
-      url: "/admin",
+      title: "Questões",
+      url: "/questions",
       items: [
         {
-          title: "Questões",
-          url: "/admin/questions",
+          title: "Todas as Questões",
+          url: "/questions",
+          items: [],
+        },
+        {
+          title: "Criar Questão",
+          url: "/questions/create",
+          items: [],
+        },
+        {
+          title: "Categorias",
+          url: "/questions/categories",
           items: [],
         },
       ],
@@ -46,7 +56,39 @@ const data = {
     {
       title: "Playlists",
       url: "/playlists",
-      items: [],
+      items: [
+        {
+          title: "Minhas Playlists",
+          url: "/playlists",
+          items: [],
+        },
+        {
+          title: "Criar Playlist",
+          url: "/playlists/create",
+          items: [],
+        },
+      ],
+    },
+    {
+      title: "Admin",
+      url: "/admin",
+      items: [
+        {
+          title: "Usuários",
+          url: "/admin/users",
+          items: [],
+        },
+        {
+          title: "Configurações",
+          url: "/admin/settings",
+          items: [],
+        },
+        {
+          title: "Relatórios",
+          url: "/admin/reports",
+          items: [],
+        },
+      ],
     },
   ] as NavItem[],
 };

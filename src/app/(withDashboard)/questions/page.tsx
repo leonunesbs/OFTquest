@@ -1,13 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-
 import { type Prisma } from "@prisma/client";
-import { Plus } from "lucide-react";
-import Link from "next/link";
 import QuestionsFilter from "~/components/QuestionsFilter";
 import QuestionsTable from "~/components/QuestionsTable";
-import { Button } from "~/components/ui/button";
-// src/app/admin/questions/page.tsx
-import { Suspense } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/server/db";
 
 // Função para obter os parâmetros de busca da URL
@@ -98,14 +92,12 @@ export default async function QuestionsPage({
     .then((types) => types.map((t) => t.type));
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Questões</h1>
-        <Link href="/admin/questions/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Nova Questão
-          </Button>
-        </Link>
+    <div className="container mx-auto">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Questões</h1>
+        <p className="text-muted-foreground">
+          Pratique com questões de provas anteriores do CBO
+        </p>
       </div>
 
       <Card className="mb-6">
@@ -113,25 +105,21 @@ export default async function QuestionsPage({
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<div>Carregando filtros...</div>}>
-            <QuestionsFilter
-              topics={topics}
-              years={years}
-              types={types}
-              currentFilters={{ search, topic, year, type }}
-            />
-          </Suspense>
+          <QuestionsFilter
+            topics={topics}
+            years={years}
+            types={types}
+            currentFilters={{ search, topic, year, type }}
+          />
         </CardContent>
       </Card>
 
-      <Suspense fallback={<div>Carregando questões...</div>}>
-        <QuestionsTable
-          questions={questions}
-          currentPage={page}
-          totalPages={totalPages}
-          currentFilters={{ search, topic, year, type, limit }}
-        />
-      </Suspense>
+      <QuestionsTable
+        questions={questions}
+        currentPage={page}
+        totalPages={totalPages}
+        currentFilters={{ search, topic, year, type, limit }}
+      />
     </div>
   );
 }

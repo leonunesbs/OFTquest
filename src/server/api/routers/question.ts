@@ -1,4 +1,4 @@
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 import { type Prisma } from "@prisma/client";
 // src/server/api/routers/question.ts
@@ -76,6 +76,125 @@ export const questionRouter = createTRPCRouter({
       });
 
       return question;
+    }),
+
+  // Obter uma questão específica (versão pública sem explicação)
+  getByIdPublic: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const question = await ctx.db.question.findUnique({
+        where: { id: input.id },
+        select: {
+          id: true,
+          year: true,
+          type: true,
+          number: true,
+          statement: true,
+          images: true,
+          subtopic: true,
+          options: {
+            select: {
+              id: true,
+              text: true,
+              images: true,
+              isCorrect: true,
+            },
+          },
+          topics: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      return question;
+    }),
+
+  // Obter próxima questão na sequência
+  getNextQuestion: publicProcedure
+    .input(
+      z.object({
+        year: z.number(),
+        type: z.string(),
+        number: z.number(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const nextQuestion = await ctx.db.question.findFirst({
+        where: {
+          OR: [
+            // Mesmo ano, mesmo tipo, número maior
+            {
+              AND: [
+                { year: input.year },
+                { type: input.type },
+                { number: { gt: input.number } },
+              ],
+            },
+            // Mesmo ano, tipo diferente, número maior
+            {
+              AND: [{ year: input.year }, { type: { gt: input.type } }],
+            },
+            // Ano anterior
+            {
+              year: { lt: input.year },
+            },
+          ],
+        },
+        orderBy: [{ year: "desc" }, { type: "asc" }, { number: "asc" }],
+        select: {
+          id: true,
+          year: true,
+          type: true,
+          number: true,
+        },
+      });
+
+      return nextQuestion;
+    }),
+
+  // Obter questão anterior na sequência
+  getPreviousQuestion: publicProcedure
+    .input(
+      z.object({
+        year: z.number(),
+        type: z.string(),
+        number: z.number(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const previousQuestion = await ctx.db.question.findFirst({
+        where: {
+          OR: [
+            // Mesmo ano, mesmo tipo, número menor
+            {
+              AND: [
+                { year: input.year },
+                { type: input.type },
+                { number: { lt: input.number } },
+              ],
+            },
+            // Mesmo ano, tipo diferente, número menor
+            {
+              AND: [{ year: input.year }, { type: { lt: input.type } }],
+            },
+            // Ano posterior
+            {
+              year: { gt: input.year },
+            },
+          ],
+        },
+        orderBy: [{ year: "asc" }, { type: "desc" }, { number: "desc" }],
+        select: {
+          id: true,
+          year: true,
+          type: true,
+          number: true,
+        },
+      });
+
+      return previousQuestion;
     }),
 
   // Obter lista de temas disponíveis
@@ -234,5 +353,100 @@ export const questionRouter = createTRPCRouter({
       });
 
       return { success: true };
+    }),
+
+  // Obter total de questões por ano e tipo
+  getTotalQuestionsByYearAndType: publicProcedure
+    .input(
+      z.object({
+        year: z.number(),
+        type: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const total = await ctx.db.question.count({
+        where: {
+          year: input.year,
+          type: input.type,
+        },
+      });
+
+      return total;
+    }),
+
+  // Obter primeira questão do ano e tipo
+  getFirstQuestion: publicProcedure
+    .input(
+      z.object({
+        year: z.number(),
+        type: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const firstQuestion = await ctx.db.question.findFirst({
+        where: {
+          year: input.year,
+          type: input.type,
+        },
+        orderBy: [{ number: "asc" }],
+        select: {
+          id: true,
+          year: true,
+          type: true,
+          number: true,
+        },
+      });
+
+      return firstQuestion;
+    }),
+
+  // Obter última questão do ano e tipo
+  getLastQuestion: publicProcedure
+    .input(
+      z.object({
+        year: z.number(),
+        type: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const lastQuestion = await ctx.db.question.findFirst({
+        where: {
+          year: input.year,
+          type: input.type,
+        },
+        orderBy: [{ number: "desc" }],
+        select: {
+          id: true,
+          year: true,
+          type: true,
+          number: true,
+        },
+      });
+
+      return lastQuestion;
+    }),
+
+  // Obter todas as questões de um ano e tipo específicos
+  getAllByYearAndType: publicProcedure
+    .input(
+      z.object({
+        year: z.number(),
+        type: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const questions = await ctx.db.question.findMany({
+        where: {
+          year: input.year,
+          type: input.type,
+        },
+        orderBy: [{ number: "asc" }],
+        select: {
+          id: true,
+          number: true,
+        },
+      });
+
+      return questions;
     }),
 });

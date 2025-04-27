@@ -19,7 +19,7 @@ interface ImportQuestion {
   images: string[];
 }
 
-const CHUNK_SIZE = 250; // Process questions in chunks of 50
+const CHUNK_SIZE = 25; // Process questions in chunks of 50
 
 export async function POST() {
   try {

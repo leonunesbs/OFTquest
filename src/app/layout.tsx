@@ -1,6 +1,6 @@
 import "~/styles/globals.css";
 
-import { type Metadata } from "next";
+import { type Metadata, type Viewport } from "next";
 import { Open_Sans } from "next/font/google";
 
 import { ThemeProvider } from "~/components/theme-provider";
@@ -90,14 +90,13 @@ export const metadata: Metadata = {
   category: "education",
   classification: "educational",
   referrer: "origin-when-cross-origin",
+};
+
+export const viewports: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "white" },
     { media: "(prefers-color-scheme: dark)", color: "black" },
   ],
-};
-
-export const viewports = {
-  mobile: "width=device-width, initial-scale=1.0",
 };
 
 export default function RootLayout({
