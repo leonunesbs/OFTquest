@@ -1,3 +1,5 @@
+"use client";
+
 import { type Prisma } from "@prisma/client";
 import {
   Pagination,
