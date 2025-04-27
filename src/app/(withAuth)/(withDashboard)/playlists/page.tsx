@@ -110,9 +110,8 @@ export default async function PlaylistsPage({
         {playlists.map((pl) => (
           <Card
             key={pl.id}
-            className="group relative flex h-full flex-col overflow-hidden transition-all hover:shadow-lg"
+            className="group relative flex h-full flex-col overflow-hidden transition-all"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             <CardHeader>
               <CardTitle className="line-clamp-1 text-xl">{pl.name}</CardTitle>
               <CardDescription>
@@ -150,11 +149,7 @@ export default async function PlaylistsPage({
                     ),
                   ),
                 ).map((topic) => (
-                  <Badge
-                    key={topic}
-                    variant="secondary"
-                    className="bg-primary/10 text-primary hover:bg-primary/20"
-                  >
+                  <Badge key={topic} variant="secondary">
                     {topic}
                   </Badge>
                 ))}
