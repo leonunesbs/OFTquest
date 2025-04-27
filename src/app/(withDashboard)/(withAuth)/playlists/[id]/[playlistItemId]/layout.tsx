@@ -1,9 +1,9 @@
 import ExamModeToggle from "~/components/ExamModeToggle";
-import PlaylistItemLoading from "./loading";
 import PlaylistPagination from "~/components/PlaylistPagination";
 import { Progress } from "~/components/ui/progress";
 import { api } from "~/trpc/server";
 import { getExamMode } from "./actions";
+import PlaylistItemLoading from "./loading";
 
 export default async function PlaylistItemLayout({
   children,
@@ -15,7 +15,6 @@ export default async function PlaylistItemLayout({
   const { id, playlistItemId } = await params;
   const playlist = await api.playlist.getById({ id });
   const examMode = await getExamMode();
-
   const currentIndex = playlist?.items.findIndex(
     (item: { id: string }) => item.id === playlistItemId,
   );
