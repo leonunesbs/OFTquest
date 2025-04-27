@@ -7,11 +7,27 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 
+import { Button } from "~/components/ui/button";
+import { Plus } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 
 export default function PlaylistsLoading() {
   return (
-    <>
+    <div className="container space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Minhas Playlists
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Gerencie suas playlists de questões
+          </p>
+        </div>
+        <Button disabled size="lg">
+          <Plus className="mr-2 h-4 w-4" /> Nova Playlist
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <Card
@@ -64,6 +80,6 @@ export default function PlaylistsLoading() {
           <Skeleton className="h-10 w-10" />
         </div>
       </div>
-    </>
+    </div>
   );
 }

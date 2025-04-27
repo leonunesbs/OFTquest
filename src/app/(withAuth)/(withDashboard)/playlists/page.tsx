@@ -1,5 +1,5 @@
 // src/app/playlists/page.tsx
-import { BookOpen, CheckCircle2, Clock } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, Plus } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -69,7 +69,7 @@ export default async function PlaylistsPage({
   // Caso não haja nenhuma playlist ainda
   if (playlists.length === 0) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="container flex min-h-[60vh] items-center justify-center">
         <Card className="mx-auto max-w-lg text-center">
           <CardHeader>
             <CardTitle>Você ainda não tem playlists</CardTitle>
@@ -89,7 +89,23 @@ export default async function PlaylistsPage({
 
   // Lista as playlists existentes
   return (
-    <>
+    <div className="container space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Minhas Playlists
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Gerencie suas playlists de questões
+          </p>
+        </div>
+        <Button asChild size="lg">
+          <Link href="/playlists/create">
+            <Plus className="mr-2 h-4 w-4" /> Nova Playlist
+          </Link>
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {playlists.map((pl) => (
           <Card
@@ -191,6 +207,6 @@ export default async function PlaylistsPage({
           </Pagination>
         </div>
       )}
-    </>
+    </div>
   );
 }
