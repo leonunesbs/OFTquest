@@ -26,14 +26,14 @@ export async function generateMetadata({
 
   if (!question) {
     return {
-      title: "Questão não encontrada | OFT Quest",
+      title: "Questão não encontrada",
       description:
         "A questão que você está procurando não existe ou foi removida.",
     };
   }
 
   return {
-    title: `Questão ${question.year} – ${question.type} – ${question.number} | OFT Quest`,
+    title: `Questão ${question.year} – ${question.type} – ${question.number}`,
     description: `Questão ${question.number} do ${question.type} de ${question.year}. Tema: ${question.topics?.map((t) => t.name).join(", ")} ${question.subtopic ? `| ${question.subtopic}` : ""}`,
     openGraph: {
       title: `Questão ${question.year} – ${question.type} – ${question.number}`,
