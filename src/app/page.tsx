@@ -16,9 +16,6 @@ import { auth } from "~/server/auth";
 import { HydrateClient } from "~/trpc/server";
 
 export const metadata: Metadata = {
-  title: "OFTQuest - Questões Comentadas para Prova do CBO",
-  description:
-    "OFTQuest é a plataforma líder em questões comentadas para o CBO. Acesse gratuitamente questões do CBO com gabarito, sem necessidade de cadastro. Prepare-se para a prova do CBO com nossa plataforma especializada.",
   keywords: [
     "OFTQuest",
     "questões CBO",
@@ -35,31 +32,6 @@ export const metadata: Metadata = {
     "preparação prova título",
     "questões comentadas oftalmologia",
   ],
-  openGraph: {
-    title:
-      "OFTQuest - Questões Comentadas para Prova de Título em Oftalmologia",
-    description:
-      "OFTQuest é a plataforma líder em questões comentadas para o CBO. Acesse gratuitamente questões do CBO com gabarito, sem necessidade de cadastro. Prepare-se para a prova de título em oftalmologia com nossa plataforma especializada.",
-    type: "website",
-    locale: "pt_BR",
-    siteName: "OFTQuest",
-    images: [
-      {
-        url: "https://oftquest.vercel.app/oftquest-logo.png",
-        width: 512,
-        height: 512,
-        alt: "Logo do OFTQuest - Plataforma de Estudos em Oftalmologia",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title:
-      "OFTQuest - Questões Comentadas para Prova de Título em Oftalmologia",
-    description:
-      "OFTQuest é a plataforma líder em questões comentadas para o CBO. Acesse gratuitamente questões do CBO com gabarito, sem necessidade de cadastro. Prepare-se para a prova de título em oftalmologia com nossa plataforma especializada.",
-    images: ["https://oftquest.vercel.app/oftquest-logo.png"],
-  },
 };
 
 export default async function Home() {
