@@ -33,12 +33,13 @@ const ITEMS_PER_PAGE = 6;
 export default async function PlaylistsPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const { page } = await searchParams;
   const session = await auth();
   if (!session?.user) redirect("/");
 
-  const currentPage = Number(searchParams.page) || 1;
+  const currentPage = Number(page) || 1;
   const skip = (currentPage - 1) * ITEMS_PER_PAGE;
 
   const [playlists, totalPlaylists] = await Promise.all([
