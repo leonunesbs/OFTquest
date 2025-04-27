@@ -147,7 +147,7 @@ export default async function Home() {
             </p>
             <div className="flex gap-4">
               <Button asChild size="lg">
-                <Link href="/questoes">Começar Agora</Link>
+                <Link href="/questions">Começar Agora</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link href="/premium">Conhecer Premium</Link>
@@ -184,7 +184,7 @@ export default async function Home() {
               </CardContent>
               <CardFooter>
                 <Button asChild className="w-full">
-                  <Link href="/questoes">Acessar Questões</Link>
+                  <Link href="/questions">Acessar Questões</Link>
                 </Button>
               </CardFooter>
             </Card>

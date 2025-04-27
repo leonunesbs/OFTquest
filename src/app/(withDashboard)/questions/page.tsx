@@ -1,4 +1,5 @@
 import { type Prisma } from "@prisma/client";
+import QuestionInteractive from "~/components/QuestionInteractive";
 import QuestionsFilter from "~/components/QuestionsFilter";
 import QuestionsTable from "~/components/QuestionsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -91,6 +92,19 @@ export default async function QuestionsPage({
     })
     .then((types) => types.map((t) => t.type));
 
+  // Buscar uma questão aleatória
+  const randomQuestion = await db.question.findFirst({
+    where: {},
+    orderBy: {
+      id: "asc",
+    },
+    skip: Math.floor(Math.random() * totalQuestions),
+    include: {
+      options: true,
+      topics: true,
+    },
+  });
+
   return (
     <div className="container mx-auto">
       <div className="mb-6">
@@ -99,6 +113,17 @@ export default async function QuestionsPage({
           Pratique com questões de provas anteriores do CBO
         </p>
       </div>
+
+      {randomQuestion && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Questão Aleatória</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QuestionInteractive question={randomQuestion} />
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mb-6">
         <CardHeader>
