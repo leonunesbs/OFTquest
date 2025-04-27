@@ -183,7 +183,7 @@ export default function PlaylistItem({
               }}
               role="radio"
               aria-checked={selectedOption === opt.id}
-              tabIndex={0}
+              tabIndex={-1}
               className={
                 `flex items-start space-x-2 rounded-md border p-4 ` +
                 (!answered
