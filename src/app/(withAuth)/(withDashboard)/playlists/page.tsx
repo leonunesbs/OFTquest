@@ -1,5 +1,5 @@
-import { BookOpen, CheckCircle2, Clock } from "lucide-react";
 // src/app/playlists/page.tsx
+import { BookOpen, CheckCircle2, Clock } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -8,6 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "~/components/ui/pagination";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -20,32 +28,48 @@ export const metadata = {
   title: "Minhas Playlists",
 };
 
-export default async function PlaylistsPage() {
+const ITEMS_PER_PAGE = 6;
+
+export default async function PlaylistsPage({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
   const session = await auth();
   if (!session?.user) redirect("/");
 
-  const playlists = await db.playlist.findMany({
-    include: {
-      items: {
-        include: {
-          question: {
-            include: {
-              topics: true,
+  const currentPage = Number(searchParams.page) || 1;
+  const skip = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  const [playlists, totalPlaylists] = await Promise.all([
+    db.playlist.findMany({
+      include: {
+        items: {
+          include: {
+            question: {
+              include: {
+                topics: true,
+              },
             },
           },
         },
+        playlistMetric: true,
       },
-      playlistMetric: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: ITEMS_PER_PAGE,
+      skip,
+    }),
+    db.playlist.count(),
+  ]);
+
+  const totalPages = Math.ceil(totalPlaylists / ITEMS_PER_PAGE);
 
   // Caso não haja nenhuma playlist ainda
   if (playlists.length === 0) {
     return (
-      <div>
+      <div className="flex min-h-[60vh] items-center justify-center">
         <Card className="mx-auto max-w-lg text-center">
           <CardHeader>
             <CardTitle>Você ainda não tem playlists</CardTitle>
@@ -54,7 +78,7 @@ export default async function PlaylistsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild>
+            <Button asChild size="lg">
               <Link href="/playlists/create">Criar Playlist</Link>
             </Button>
           </CardContent>
@@ -65,21 +89,16 @@ export default async function PlaylistsPage() {
 
   // Lista as playlists existentes
   return (
-    <div className="container space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Minhas Playlists</h1>
-        <Button asChild>
-          <Link href="/playlists/create">Nova Playlist</Link>
-        </Button>
-      </div>
+    <>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {playlists.map((pl) => (
           <Card
             key={pl.id}
-            className="group flex h-full flex-col transition-all hover:shadow"
+            className="group relative flex h-full flex-col overflow-hidden transition-all hover:shadow-lg"
           >
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             <CardHeader>
-              <CardTitle className="line-clamp-1">{pl.name}</CardTitle>
+              <CardTitle className="line-clamp-1 text-xl">{pl.name}</CardTitle>
               <CardDescription>
                 <div className="mt-2 space-y-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -133,6 +152,45 @@ export default async function PlaylistsPage() {
           </Card>
         ))}
       </div>
-    </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href={`/playlists?page=${currentPage - 1}`}
+                  className={
+                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                  }
+                />
+              </PaginationItem>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href={`/playlists?page=${page}`}
+                      isActive={page === currentPage}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ),
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  href={`/playlists?page=${currentPage + 1}`}
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : ""
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+    </>
   );
 }
