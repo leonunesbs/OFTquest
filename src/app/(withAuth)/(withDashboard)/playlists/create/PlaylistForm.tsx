@@ -1,7 +1,6 @@
 // src/app/playlists/create/PlaylistsForm.tsx
 "use client";
 
-import { Loader2, Lock, Sparkles } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -11,19 +10,20 @@ import {
   FormLabel,
   FormMessage,
 } from "~/components/ui/form";
+import { Loader2, Lock, Sparkles } from "lucide-react";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Slider } from "~/components/ui/slider";
-import { useToast } from "~/hooks/use-toast";
 import { api } from "~/trpc/react";
+import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useToast } from "~/hooks/use-toast";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 export const availableYears = Array.from(
   { length: 2025 - 2006 + 1 },
@@ -259,25 +259,37 @@ export default function PlaylistForm({
             <FormItem>
               <FormLabel>Anos das Questões</FormLabel>
               <FormControl>
-                <div className="grid max-h-64 grid-cols-4 gap-2 overflow-auto">
-                  {availableYears.map((year) => (
-                    <div key={year} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`year-${year}`}
-                        checked={field.value.includes(year)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            field.onChange([...field.value, year]);
-                          } else {
-                            field.onChange(
-                              field.value.filter((y) => y !== year),
-                            );
-                          }
-                        }}
-                      />
-                      <Label htmlFor={`year-${year}`}>{year}</Label>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="select-all-years"
+                      checked={field.value.length === availableYears.length}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked ? [...availableYears] : []);
+                      }}
+                    />
+                    <Label htmlFor="select-all-years">Selecionar todos</Label>
+                  </div>
+                  <div className="grid max-h-64 grid-cols-4 gap-2 overflow-auto">
+                    {availableYears.map((year) => (
+                      <div key={year} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`year-${year}`}
+                          checked={field.value.includes(year)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              field.onChange([...field.value, year]);
+                            } else {
+                              field.onChange(
+                                field.value.filter((y) => y !== year),
+                              );
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`year-${year}`}>{year}</Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </FormControl>
               <FormDescription>
