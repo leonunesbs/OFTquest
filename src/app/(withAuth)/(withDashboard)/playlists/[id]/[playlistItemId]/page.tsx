@@ -7,11 +7,12 @@ import { getExamMode } from "./actions";
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string; playlistItemId: string };
+  params: Promise<{ id: string; playlistItemId: string }>;
 }): Promise<Metadata> {
-  const playlist = await api.playlist.getById({ id: params.id });
+  const { id, playlistItemId } = await params;
+  const playlist = await api.playlist.getById({ id });
   const currentItem = playlist?.items.find(
-    (item: { id: string }) => item.id === params.playlistItemId,
+    (item: { id: string }) => item.id === playlistItemId,
   );
 
   if (!playlist || !currentItem) {
