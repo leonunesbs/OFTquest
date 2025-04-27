@@ -1,3 +1,4 @@
+import { BookOpen, CheckCircle2, Clock } from "lucide-react";
 // src/app/playlists/page.tsx
 import {
   Card,
@@ -8,6 +9,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import { auth } from "~/server/auth";
@@ -24,7 +26,15 @@ export default async function PlaylistsPage() {
 
   const playlists = await db.playlist.findMany({
     include: {
-      items: true,
+      items: {
+        include: {
+          question: {
+            include: {
+              topics: true,
+            },
+          },
+        },
+      },
       playlistMetric: true,
     },
     orderBy: {
@@ -55,35 +65,68 @@ export default async function PlaylistsPage() {
 
   // Lista as playlists existentes
   return (
-    <div className="container space-y-6">
-      <div className="flex justify-end">
+    <div className="container space-y-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Minhas Playlists</h1>
         <Button asChild>
           <Link href="/playlists/create">Nova Playlist</Link>
         </Button>
       </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {playlists.map((pl) => (
-          <Card key={pl.id} className="group">
+          <Card
+            key={pl.id}
+            className="group flex h-full flex-col transition-all hover:shadow"
+          >
             <CardHeader>
-              <CardTitle>{pl.name}</CardTitle>
+              <CardTitle className="line-clamp-1">{pl.name}</CardTitle>
               <CardDescription>
-                <div className="space-y-2">
-                  <p>{pl.items.length} questões</p>
+                <div className="mt-2 space-y-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <BookOpen className="h-4 w-4" />
+                    <span>{pl.items.length} questões</span>
+                  </div>
                   {pl.playlistMetric && (
-                    <div className="space-y-1">
-                      <p>Respondidas: {pl.playlistMetric.answeredQuestions}</p>
-                      <p>Acertos: {pl.playlistMetric.correctAnswers}</p>
-                      <p>
-                        Taxa de acerto:{" "}
-                        {(pl.playlistMetric.accuracy * 100).toFixed(1)}%
-                      </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>
+                          Respondidas: {pl.playlistMetric.answeredQuestions}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>
+                          Acertos: {pl.playlistMetric.correctAnswers} (
+                          {(pl.playlistMetric.accuracy * 100).toFixed(1)}%)
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
               </CardDescription>
             </CardHeader>
+            <CardContent className="flex-1">
+              <div className="flex flex-wrap gap-1.5">
+                {Array.from(
+                  new Set(
+                    pl.items.flatMap((item) =>
+                      item.question.topics.map((topic) => topic.name),
+                    ),
+                  ),
+                ).map((topic) => (
+                  <Badge
+                    key={topic}
+                    variant="secondary"
+                    className="bg-primary/10 text-primary hover:bg-primary/20"
+                  >
+                    {topic}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
             <CardFooter>
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className="w-full">
                 <Link href={`/playlists/${pl.id}`}>Ver detalhes</Link>
               </Button>
             </CardFooter>

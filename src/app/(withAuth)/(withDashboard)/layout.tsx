@@ -13,13 +13,13 @@ import {
 } from "~/components/ui/sidebar";
 
 import { AppSidebar } from "~/components/AppSidebar";
-import { ThemeToggle } from "~/components/theme-toggle";
 import { Separator } from "~/components/ui/separator";
+import { ThemeToggle } from "~/components/theme-toggle";
 
 function DashboardHeader() {
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 border-b">
-      <div className="flex items-center gap-2 px-3">
+    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-2 sm:px-4 lg:px-8">
+      <div className="flex items-center gap-2">
         <SidebarTrigger />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
@@ -36,7 +36,7 @@ function DashboardHeader() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <div className="ml-auto flex items-center gap-2 px-3">
+      <div className="ml-auto flex items-center gap-2">
         <ThemeToggle />
       </div>
     </header>
@@ -45,7 +45,7 @@ function DashboardHeader() {
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-1 flex-col gap-4 px-2 py-6 sm:px-4 md:px-8">
+    <div className="flex flex-1 flex-col gap-4 px-2 py-6 sm:px-4 lg:px-8">
       {children}
     </div>
   );

@@ -1,4 +1,5 @@
 import ExamModeToggle from "~/components/ExamModeToggle";
+import PlaylistItemLoading from "./loading";
 import PlaylistPagination from "~/components/PlaylistPagination";
 import { Progress } from "~/components/ui/progress";
 import { api } from "~/trpc/server";
@@ -15,17 +16,15 @@ export default async function PlaylistItemLayout({
   const playlist = await api.playlist.getById({ id });
   const examMode = await getExamMode();
 
-  if (!playlist) {
-    return null;
-  }
-
-  const currentIndex = playlist.items.findIndex(
+  const currentIndex = playlist?.items.findIndex(
     (item: { id: string }) => item.id === playlistItemId,
   );
 
-  if (currentIndex === -1) {
-    return null;
+  if (!playlist || currentIndex === -1) {
+    return <PlaylistItemLoading />;
   }
+
+  const index = currentIndex!;
 
   return (
     <div>
@@ -34,18 +33,20 @@ export default async function PlaylistItemLayout({
         <ExamModeToggle initialExamMode={examMode} />
       </div>
       <div className="mb-6">
-        <Progress value={((currentIndex + 1) / playlist.items.length) * 100} />
+        <Progress value={((index + 1) / playlist.items.length) * 100} />
       </div>
       <div className="space-y-4">
         <PlaylistPagination
+          key={`${playlistItemId}-top`}
           playlist={playlist}
-          currentIndex={currentIndex}
+          currentIndex={index}
           examMode={examMode}
         />
         {children}
         <PlaylistPagination
+          key={`${playlistItemId}-bottom`}
           playlist={playlist}
-          currentIndex={currentIndex}
+          currentIndex={index}
           examMode={examMode}
         />
       </div>
