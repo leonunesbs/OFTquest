@@ -61,7 +61,7 @@ export async function generateMetadata({
         "https://oftquest.vercel.app/oftquest-logo.png",
     },
     alternates: {
-      canonical: `https://oftquest.vercel.app/playlists/${params.id}/${params.playlistItemId}`,
+      canonical: `https://oftquest.vercel.app/playlists/${(await params).id}/${(await params).playlistItemId}`,
     },
   };
 }
