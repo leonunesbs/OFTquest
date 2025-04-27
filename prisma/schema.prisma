@@ -109,13 +109,15 @@ model Option {
 }
 
 model Playlist {
-    id             String          @id @default(cuid())
-    name           String
-    user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-    userId         String
+    id     String @id @default(cuid())
+    name   String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId String
+
     items          PlaylistItem[]
-    createdAt      DateTime        @default(now())
     playlistMetric PlaylistMetric?
+
+    createdAt DateTime @default(now())
 }
 
 model PlaylistMetric {
