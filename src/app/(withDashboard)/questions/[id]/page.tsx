@@ -14,36 +14,7 @@ import QuestionInteractive from "~/components/QuestionInteractive";
 import { QuestionNavigationForm } from "~/components/QuestionNavigationForm";
 import QuestionPagination from "~/components/QuestionPagination";
 import { Button } from "~/components/ui/button";
-import { db } from "~/server/db";
 import { api, HydrateClient } from "~/trpc/server";
-
-// Revalidate the page every 1 hour
-export const revalidate = 3600;
-
-// Allow dynamic generation of pages not statically generated
-export const dynamicParams = true;
-
-// Generate static params for the most recent questions
-export async function generateStaticParams() {
-  const currentYear = new Date().getFullYear();
-  const types = ["teorica-1", "teorica-2", "teorico-pratica"];
-
-  const questions = await db.question.findMany({
-    where: {
-      year: currentYear,
-      type: {
-        in: types,
-      },
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  return questions.map((question) => ({
-    id: question.id,
-  }));
-}
 
 export async function generateMetadata({
   params,
