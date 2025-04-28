@@ -107,7 +107,11 @@ async function getQuestionsData(searchParams: SearchParams) {
         })
         .then((types) => types.map((t) => t.type)),
       db.question.findFirst({
-        where: {},
+        where: {
+          images: {
+            isEmpty: false,
+          },
+        },
         orderBy: {
           id: "asc",
         },
