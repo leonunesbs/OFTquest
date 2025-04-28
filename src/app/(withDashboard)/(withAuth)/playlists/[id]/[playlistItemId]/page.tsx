@@ -32,12 +32,12 @@ export async function generateMetadata({
     title: `${questionTitle}`,
     description,
     openGraph: {
-      title: `${questionTitle} | OFTQuest`,
+      title: `${questionTitle} | OFT.quest`,
       description,
       type: "article",
       publishedTime: currentItem.question.createdAt.toISOString(),
       modifiedTime: currentItem.question.updatedAt.toISOString(),
-      authors: ["OFTQuest"],
+      authors: ["OFT.quest"],
       tags: [
         ...(currentItem.question.topics?.map((t) => t.name) ?? [
           "Oftalmologia",
@@ -54,7 +54,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: `${questionTitle} | OFTQuest`,
+      title: `${questionTitle} | OFT.quest`,
       description,
       images:
         currentItem.question.images[0] ??
@@ -101,7 +101,7 @@ export default async function PlaylistItemPage({
     description: `Questão de ${currentItem.question.topics?.map((t) => t.name).join(", ") ?? "Oftalmologia"} para o CBO. Acesse a questão completa com explicação detalhada.`,
     author: {
       "@type": "Organization",
-      name: "OFTQuest",
+      name: "OFT.quest",
       url: "https://oftquest.com.br",
       logo: {
         "@type": "ImageObject",
@@ -110,7 +110,7 @@ export default async function PlaylistItemPage({
     },
     publisher: {
       "@type": "Organization",
-      name: "OFTQuest",
+      name: "OFT.quest",
       logo: {
         "@type": "ImageObject",
         url: "https://oftquest.com.br/oftquest-logo.png",

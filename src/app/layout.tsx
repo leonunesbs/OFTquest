@@ -3,7 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata, type Viewport } from "next";
 import { Open_Sans } from "next/font/google";
 
-import { ThemeProvider } from "~/components/theme-provider";
+import { ThemeProvider } from "~/components/ThemeProvider";
 import { Toaster } from "~/components/ui/toaster";
 import { TRPCReactProvider } from "~/trpc/react";
 
@@ -11,12 +11,12 @@ const openSans = Open_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "OFTquest - Questões Comentadas para o CBO",
-    template: "%s | OFTquest",
+    default: "OFT.quest - Questões Comentadas para o CBO",
+    template: "%s | OFT.quest",
   },
   description:
-    "OFTquest é a plataforma especializada em questões comentadas para o CBO (Conselho Brasileiro de Oftalmologia). Acesse questões detalhadamente explicadas, acompanhe seu progresso e melhore seu desempenho com ferramentas específicas para a prova de título em oftalmologia.",
-  applicationName: "OFTquest - Questões CBO",
+    "OFT.quest é a plataforma especializada em questões comentadas para o CBO (Conselho Brasileiro de Oftalmologia). Acesse questões detalhadamente explicadas, acompanhe seu progresso e melhore seu desempenho com ferramentas específicas para a prova de título em oftalmologia.",
+  applicationName: "OFT.quest - Questões CBO",
   generator: "Next.js",
   keywords: [
     "CBO",
@@ -49,11 +49,11 @@ export const metadata: Metadata = {
     languages: { "pt-BR": "https://oftquest.com.br" },
   },
   openGraph: {
-    title: "OFTquest - Questões Comentadas para o CBO",
+    title: "OFT.quest - Questões Comentadas para o CBO",
     description:
-      "Prepare-se para a prova de título do CBO com o OFTquest. Acesse questões detalhadamente comentadas, acompanhe seu progresso e otimize seus estudos com nossa plataforma especializada para a prova de título em oftalmologia.",
+      "Prepare-se para a prova de título do CBO com o OFT.quest. Acesse questões detalhadamente comentadas, acompanhe seu progresso e otimize seus estudos com nossa plataforma especializada para a prova de título em oftalmologia.",
     url: "https://oftquest.com.br",
-    siteName: "OFTquest",
+    siteName: "OFT.quest",
     locale: "pt_BR",
     type: "website",
     images: [
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
         url: "https://oftquest.com.br/oftquest-logo.png",
         width: 512,
         height: 512,
-        alt: "Logo do OFTquest - Plataforma de Estudos em Oftalmologia",
+        alt: "Logo do OFT.quest - Plataforma de Estudos em Oftalmologia",
       },
     ],
   },
@@ -69,9 +69,9 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@leonunesbs",
     creator: "@leonunesbs",
-    title: "OFTquest - Questões Comentadas para o CBO",
+    title: "OFT.quest - Questões Comentadas para o CBO",
     description:
-      "OFTquest oferece questões detalhadamente comentadas para a prova de título do CBO. Prepare-se com questões específicas, explicações detalhadas e recursos exclusivos para otimizar sua preparação. Comece agora!",
+      "OFT.quest oferece questões detalhadamente comentadas para a prova de título do CBO. Prepare-se com questões específicas, explicações detalhadas e recursos exclusivos para otimizar sua preparação. Comece agora!",
     images: ["https://oftquest.com.br/oftquest-logo.png"],
   },
   manifest: "/favicon/site.webmanifest",
@@ -121,7 +121,7 @@ export default function RootLayout({
           sizes="180x180"
           href="/favicon/apple-touch-icon.png"
         />
-        <meta name="apple-mobile-web-app-title" content="OFTQuest" />
+        <meta name="apple-mobile-web-app-title" content="OFT.quest" />
         <link rel="manifest" href="/favicon/site.webmanifest" />
 
         {/* Metadata */}
@@ -136,7 +136,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              name: "OFTQuest",
+              name: "OFT.quest",
               url: "https://oftquest.com.br",
               logo: "https://oftquest.com.br/oftquest-logo.png",
               sameAs: [

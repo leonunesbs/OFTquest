@@ -7,17 +7,64 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 
+import { loadStripe } from "@stripe/stripe-js";
 import { Check } from "lucide-react";
 import { type Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/server/auth";
 import { HydrateClient } from "~/trpc/server";
 
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+);
+
+interface CheckoutResponse {
+  sessionId: string;
+}
+
+async function createCheckoutSession() {
+  "use server";
+
+  const session = await auth();
+  if (!session?.user) {
+    redirect(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth/signin`);
+  }
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL}/api/create-checkout-session`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    const data = (await response.json()) as CheckoutResponse;
+    const stripe = await stripePromise;
+
+    if (!stripe) throw new Error("Stripe failed to initialize");
+
+    const { error } = await stripe.redirectToCheckout({
+      sessionId: data.sessionId,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+}
+
 export const metadata: Metadata = {
   keywords: [
-    "OFTQuest",
+    "OFT.quest",
     "questões CBO",
     "prova de título oftalmologia",
     "questões comentadas CBO",
@@ -37,73 +84,9 @@ export const metadata: Metadata = {
 export default async function Home() {
   const session = await auth();
 
-  // Structured data for SEO
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: "OFTQuest",
-    description:
-      "OFTQuest é a plataforma líder em questões comentadas para o CBO (Conselho Brasileiro de Oftalmologia). Acesse questões detalhadamente explicadas, acompanhe seu progresso e melhore seu desempenho.",
-    applicationCategory: "EducationalApplication",
-    operatingSystem: "Web",
-    offers: [
-      {
-        "@type": "Offer",
-        name: "Plano Gratuito",
-        price: "0",
-        priceCurrency: "BRL",
-        availability: "https://schema.org/InStock",
-        description:
-          "Acesso a questões do CBO com gabarito, sem necessidade de cadastro",
-      },
-      {
-        "@type": "Offer",
-        name: "Plano Registrado",
-        price: "0",
-        priceCurrency: "BRL",
-        availability: "https://schema.org/InStock",
-        description:
-          "Recursos básicos com cadastro, incluindo salvamento de questões favoritas e acompanhamento básico",
-      },
-      {
-        "@type": "Offer",
-        name: "Plano Premium",
-        price: "0",
-        priceCurrency: "BRL",
-        availability: "https://schema.org/InStock",
-        description:
-          "Recursos avançados incluindo playlists personalizadas, questões comentadas e métricas avançadas",
-      },
-    ],
-    featureList: [
-      "Questões do CBO com gabarito",
-      "Playlists personalizadas",
-      "Questões comentadas",
-      "Método automatizado de estudo",
-      "Acompanhamento de progresso",
-      "Métricas avançadas de desempenho",
-    ],
-    educationalUse: "Exam Preparation",
-    educationalLevel: "Professional",
-    audience: {
-      "@type": "MedicalAudience",
-      medicalAudienceType: "Ophthalmologists",
-    },
-    brand: {
-      "@type": "Brand",
-      name: "OFTQuest",
-      logo: "https://oftquest.com.br/oftquest-logo.png",
-      slogan: "Sua plataforma de estudos em oftalmologia",
-    },
-  };
-
   return (
     <HydrateClient>
       <main className="flex min-h-screen flex-col items-center justify-center bg-background">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-        />
         <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
           {/* Hero Section */}
           <div className="flex flex-col items-center gap-4 text-center">
@@ -111,7 +94,8 @@ export default async function Home() {
               Novo
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
-              <span className="text-primary">OFT</span>Quest
+              <span className="text-muted-foreground">OFT</span>
+              <span className="text-primary">.quest</span>
             </h1>
             <p className="max-w-[600px] text-lg text-muted-foreground">
               Acesse gratuitamente questões do CBO com gabarito. Prepare-se para
@@ -122,7 +106,7 @@ export default async function Home() {
                 <Link href="/questions">Começar Agora</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href="/premium">Conhecer Premium</Link>
+                <Link href="/premium">Premium</Link>
               </Button>
             </div>
           </div>
@@ -200,7 +184,7 @@ export default async function Home() {
                   <Badge variant="secondary">Recomendado</Badge>
                 </div>
                 <CardDescription>
-                  Recursos avançados para estudo
+                  Recursos avançados para sua preparação
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
@@ -224,9 +208,11 @@ export default async function Home() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button asChild variant="default" className="w-full">
-                  <Link href="/premium">Conhecer Premium</Link>
-                </Button>
+                <form action={createCheckoutSession} className="w-full">
+                  <Button type="submit" variant="default" className="w-full">
+                    Assinar Premium
+                  </Button>
+                </form>
               </CardFooter>
             </Card>
           </div>
@@ -236,7 +222,7 @@ export default async function Home() {
             <h2 className="text-2xl font-semibold">Comece a estudar agora</h2>
             <p className="max-w-[600px] text-muted-foreground">
               Acesse gratuitamente nosso banco de questões ou faça upgrade para
-              aproveitar todos os recursos premium.
+              aproveitar todos os recursos do Premium.
             </p>
             <div className="flex flex-col items-center gap-2">
               {session ? (
@@ -261,6 +247,17 @@ export default async function Home() {
             </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <footer className="w-full border-t py-6 text-center">
+          <div className="container">
+            <span className="text-muted-foreground">OFT.</span>
+            <span className="text-primary">quest</span>
+            <span className="ml-2 text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Todos os direitos reservados.
+            </span>
+          </div>
+        </footer>
       </main>
     </HydrateClient>
   );

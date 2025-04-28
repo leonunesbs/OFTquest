@@ -49,9 +49,9 @@ export function LoginForm({
             <div className="flex h-8 w-8 items-center justify-center rounded-md">
               <GalleryVerticalEnd className="size-6" />
             </div>
-            <span className="sr-only">OFTquest</span>
+            <span className="sr-only">OFT.quest</span>
           </Link>
-          <h1 className="text-xl font-bold">Bem-vindo ao OFTquest</h1>
+          <h1 className="text-xl font-bold">Bem-vindo ao OFT.quest</h1>
           <div className="text-center text-sm">
             Não tem uma conta?{" "}
             <Link

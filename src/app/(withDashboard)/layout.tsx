@@ -14,7 +14,7 @@ import {
 
 import { AppSidebar } from "~/components/AppSidebar";
 import { Separator } from "~/components/ui/separator";
-import { ThemeToggle } from "~/components/theme-toggle";
+import { ThemeToggle } from "~/components/ThemeToggle";
 
 function DashboardHeader() {
   return (

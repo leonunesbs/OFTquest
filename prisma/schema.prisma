@@ -53,6 +53,10 @@ model User {
     accounts      Account[]
     sessions      Session[]
 
+    isPremium            Boolean @default(false)
+    stripeCustomerId     String?
+    stripeSubscriptionId String?
+
     playlists           Playlist[]
     userFavorites       UserFavorites[]
     comments            Comment[]
