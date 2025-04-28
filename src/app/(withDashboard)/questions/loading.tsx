@@ -17,13 +17,35 @@ export default function Loading() {
           <CardTitle>Questão Aleatória</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-4 w-full" />
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+          <div className="space-y-6">
+            <div className="prose dark:prose-invert">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-[90%]" />
+                <Skeleton className="h-4 w-[80%]" />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-start space-x-3 rounded-lg border p-4"
+                >
+                  <Skeleton className="mt-1 h-4 w-4 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-[80%]" />
+                    <div className="mt-2 flex gap-2">
+                      <Skeleton className="h-[200px] w-[300px] rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-center">
+              <Skeleton className="h-10 w-[120px]" />
             </div>
           </div>
         </CardContent>
