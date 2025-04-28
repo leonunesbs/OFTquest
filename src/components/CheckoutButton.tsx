@@ -4,13 +4,13 @@ import { signIn, useSession } from "next-auth/react";
 
 import { loadStripe } from "@stripe/stripe-js";
 import { useState } from "react";
-import { Button } from "~/components/ui/button";
+import { Button, type ButtonProps } from "~/components/ui/button";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
 );
 
-export function CheckoutButton() {
+export function CheckoutButton(props: ButtonProps) {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
 
@@ -40,7 +40,12 @@ export function CheckoutButton() {
   };
 
   return (
-    <Button onClick={handleCheckout} className="w-full" disabled={loading}>
+    <Button
+      onClick={handleCheckout}
+      className="w-full"
+      disabled={loading}
+      {...props}
+    >
       {loading ? "Carregando..." : "Assinar Premium"}
     </Button>
   );
