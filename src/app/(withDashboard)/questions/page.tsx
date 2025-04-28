@@ -106,21 +106,35 @@ async function getQuestionsData(searchParams: SearchParams) {
           by: ["type"],
         })
         .then((types) => types.map((t) => t.type)),
-      db.question.findFirst({
-        where: {
-          images: {
-            isEmpty: false,
+      (async () => {
+        const totalQuestionsWithImages = await db.question.count({
+          where: {
+            images: {
+              isEmpty: false,
+            },
           },
-        },
-        orderBy: {
-          id: "asc",
-        },
-        skip: Math.floor(Math.random() * (await db.question.count({ where }))),
-        include: {
-          options: true,
-          topics: true,
-        },
-      }),
+        });
+
+        const randomOffset = Math.floor(
+          Math.random() * totalQuestionsWithImages,
+        );
+
+        return db.question.findFirst({
+          where: {
+            images: {
+              isEmpty: false,
+            },
+          },
+          orderBy: {
+            id: "asc",
+          },
+          skip: randomOffset,
+          include: {
+            options: true,
+            topics: true,
+          },
+        });
+      })(),
     ]);
 
   return {

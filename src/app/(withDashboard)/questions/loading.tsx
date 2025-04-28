@@ -27,7 +27,7 @@ export default function Loading() {
             </div>
 
             <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
+              {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
                   className="flex items-start space-x-3 rounded-lg border p-4"
@@ -36,9 +36,6 @@ export default function Loading() {
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-[80%]" />
-                    <div className="mt-2 flex gap-2">
-                      <Skeleton className="h-[200px] w-[300px] rounded" />
-                    </div>
                   </div>
                 </div>
               ))}
