@@ -6,8 +6,10 @@ export default function Loading() {
   return (
     <div className="container mx-auto">
       <div className="mb-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="mt-2 h-4 w-64" />
+        <h1 className="text-3xl font-bold tracking-tight">Questões</h1>
+        <p className="text-muted-foreground">
+          Pratique com questões de provas anteriores do CBO
+        </p>
       </div>
 
       <Card className="mb-6">
