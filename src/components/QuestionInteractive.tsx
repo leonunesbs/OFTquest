@@ -4,6 +4,7 @@ import { AlertCircle, Check } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
@@ -109,18 +110,31 @@ export default function QuestionInteractive({
       </RadioGroup>
 
       {showAnswer && (
-        <div
-          className={`mt-4 flex items-center justify-center ${
-            isCorrect
-              ? "text-green-600 dark:text-green-400"
-              : "text-red-600 dark:text-red-400"
-          }`}
-        >
-          {isCorrect ? (
-            <Check className="h-6 w-6" />
-          ) : (
-            <AlertCircle className="h-6 w-6" />
-          )}
+        <div className="space-y-4">
+          <div
+            className={`mt-4 flex items-center justify-center ${
+              isCorrect
+                ? "text-green-600 dark:text-green-400"
+                : "text-red-600 dark:text-red-400"
+            }`}
+          >
+            {isCorrect ? (
+              <Check className="h-6 w-6" />
+            ) : (
+              <AlertCircle className="h-6 w-6" />
+            )}
+          </div>
+
+          <div className="mt-4 rounded-lg border bg-muted p-4 text-center">
+            <p className="mb-2 font-medium">Quer mais questões como esta?</p>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Cadastre-se para ter acesso a mais questões e acompanhar seu
+              progresso!
+            </p>
+            <Button asChild>
+              <Link href="/register">Cadastrar-se</Link>
+            </Button>
+          </div>
         </div>
       )}
 
