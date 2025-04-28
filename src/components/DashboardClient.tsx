@@ -23,10 +23,10 @@ import {
   ChartTooltipContent,
 } from "~/components/ui/chart";
 
-import { Button } from "./ui/button";
-import Link from "next/link";
 import { TrendingUp } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Button } from "./ui/button";
 
 type Period = "week" | "month" | "last30days" | "year";
 
@@ -64,15 +64,16 @@ export default function DashboardClient({ metrics }: { metrics: MetricsData }) {
   const period = (searchParams.get("period") as Period) ?? "week";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Painel de Desempenho</h2>
-        <div className="flex gap-2">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <h2 className="text-xl font-bold sm:text-2xl">Painel de Desempenho</h2>
+        <div className="flex flex-wrap gap-2">
           {periodOptions.map((option) => (
             <Link key={option.value} href={`?period=${option.value}`} passHref>
               <Button
                 variant={period === option.value ? "default" : "ghost"}
                 size="sm"
+                className="text-xs sm:text-sm"
               >
                 {option.label}
               </Button>
@@ -81,40 +82,50 @@ export default function DashboardClient({ metrics }: { metrics: MetricsData }) {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Total de Questões</CardTitle>
-            <CardDescription>Questões respondidas</CardDescription>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+        <Card className="transition-shadow hover:shadow-md">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">
+              Total de Questões
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Questões respondidas
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-4 pt-0 sm:p-6">
+            <div className="text-xl font-bold sm:text-2xl">
               {metrics?.totalAnswered ?? 0}
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Questões no Período</CardTitle>
-            <CardDescription>
+        <Card className="transition-shadow hover:shadow-md">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">
+              Questões no Período
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               Questões respondidas no período selecionado
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-4 pt-0 sm:p-6">
+            <div className="text-xl font-bold sm:text-2xl">
               {metrics?.periodAnswered ?? 0}
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Taxa de Acerto Total</CardTitle>
-            <CardDescription>Taxa de acerto geral</CardDescription>
+        <Card className="transition-shadow hover:shadow-md">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">
+              Taxa de Acerto Total
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Taxa de acerto geral
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-4 pt-0 sm:p-6">
+            <div className="text-xl font-bold sm:text-2xl">
               {metrics?.totalAccuracy
                 ? `${(metrics.totalAccuracy * 100).toFixed(1)}%`
                 : "0%"}
@@ -122,15 +133,17 @@ export default function DashboardClient({ metrics }: { metrics: MetricsData }) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Taxa de Acerto no Período</CardTitle>
-            <CardDescription>
+        <Card className="transition-shadow hover:shadow-md">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">
+              Taxa de Acerto no Período
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               Taxa de acerto no período selecionado
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-4 pt-0 sm:p-6">
+            <div className="text-xl font-bold sm:text-2xl">
               {metrics?.periodAccuracy
                 ? `${(metrics.periodAccuracy * 100).toFixed(1)}%`
                 : "0%"}
@@ -139,45 +152,52 @@ export default function DashboardClient({ metrics }: { metrics: MetricsData }) {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Questões por Período</CardTitle>
-            <CardDescription>Número de questões respondidas</CardDescription>
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
+        <Card className="transition-shadow hover:shadow-md">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">
+              Questões por Período
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Número de questões respondidas
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={questionsChartConfig}>
-              <BarChart
-                data={metrics?.questionsByPeriod ?? []}
-                margin={{ top: 20 }}
-              >
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="period"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent />}
-                />
-                <Bar
-                  dataKey="count"
-                  className="fill-sidebar-foreground"
-                  radius={[8, 8, 0, 0]}
+          <CardContent className="p-4 sm:p-6">
+            <div className="h-[300px] sm:h-[400px]">
+              <ChartContainer config={questionsChartConfig}>
+                <BarChart
+                  data={metrics?.questionsByPeriod ?? []}
+                  margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
                 >
-                  <LabelList
-                    position="top"
-                    offset={12}
-                    className="fill-foreground"
-                    fontSize={12}
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="period"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                    tick={{ fontSize: 12 }}
                   />
-                </Bar>
-              </BarChart>
-            </ChartContainer>
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent />}
+                  />
+                  <Bar
+                    dataKey="count"
+                    className="fill-sidebar-foreground"
+                    radius={[8, 8, 0, 0]}
+                  >
+                    <LabelList
+                      position="top"
+                      offset={12}
+                      className="fill-foreground"
+                      fontSize={12}
+                    />
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+            </div>
           </CardContent>
-          <CardFooter className="flex-col items-start gap-2 text-sm">
+          <CardFooter className="flex-col items-start gap-2 p-4 text-xs sm:p-6 sm:text-sm">
             <div className="flex gap-2 font-medium leading-none">
               {metrics?.periodAnswered && metrics?.totalAnswered ? (
                 <>
@@ -199,58 +219,66 @@ export default function DashboardClient({ metrics }: { metrics: MetricsData }) {
           </CardFooter>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Taxa de Acerto por Período</CardTitle>
-            <CardDescription>Taxa de acerto ao longo do tempo</CardDescription>
+        <Card className="transition-shadow hover:shadow-md">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">
+              Taxa de Acerto por Período
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Taxa de acerto ao longo do tempo
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={accuracyChartConfig}>
-              <LineChart
-                data={metrics?.accuracyByPeriod ?? []}
-                margin={{
-                  top: 20,
-                  left: 12,
-                  right: 12,
-                }}
-              >
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="period"
-                  tickLine={false}
-                  tickMargin={8}
-                  axisLine={false}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="line" />}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="accuracy"
-                  stroke="#FFFFFF"
-                  strokeWidth={2}
-                  dot={{
-                    fill: "#FFFFFF",
-                  }}
-                  activeDot={{
-                    r: 6,
+          <CardContent className="p-4 sm:p-6">
+            <div className="h-[300px] sm:h-[400px]">
+              <ChartContainer config={accuracyChartConfig}>
+                <LineChart
+                  data={metrics?.accuracyByPeriod ?? []}
+                  margin={{
+                    top: 20,
+                    right: 20,
+                    left: 20,
+                    bottom: 20,
                   }}
                 >
-                  <LabelList
-                    position="top"
-                    offset={12}
-                    className="fill-foreground"
-                    fontSize={12}
-                    formatter={(value: number) =>
-                      `${(value * 100).toFixed(1)}%`
-                    }
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="period"
+                    tickLine={false}
+                    tickMargin={8}
+                    axisLine={false}
+                    tick={{ fontSize: 12 }}
                   />
-                </Line>
-              </LineChart>
-            </ChartContainer>
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent indicator="line" />}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="accuracy"
+                    stroke="#FFFFFF"
+                    strokeWidth={2}
+                    dot={{
+                      fill: "#FFFFFF",
+                    }}
+                    activeDot={{
+                      r: 6,
+                    }}
+                  >
+                    <LabelList
+                      position="top"
+                      offset={12}
+                      className="fill-foreground"
+                      fontSize={12}
+                      formatter={(value: number) =>
+                        `${(value * 100).toFixed(1)}%`
+                      }
+                    />
+                  </Line>
+                </LineChart>
+              </ChartContainer>
+            </div>
           </CardContent>
-          <CardFooter className="flex-col items-start gap-2 text-sm">
+          <CardFooter className="flex-col items-start gap-2 p-4 text-xs sm:p-6 sm:text-sm">
             <div className="flex gap-2 font-medium leading-none">
               {metrics?.periodAccuracy ? (
                 <>
