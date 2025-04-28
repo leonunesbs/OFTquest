@@ -251,9 +251,9 @@ export default async function Home() {
         {/* Footer */}
         <footer className="w-full border-t bg-secondary py-4 text-center text-secondary-foreground">
           <div>
-            <span className="text-muted-foreground">OFT.</span>
-            <span className="text-primary">quest</span>
-            <span className="ml-2 text-sm text-muted-foreground">
+            <span className="text-muted-foreground">OFT</span>
+            <span className="text-primary">.quest</span>
+            <span className="ml-1 text-sm text-muted-foreground">
               © {new Date().getFullYear()} Todos os direitos reservados.
             </span>
           </div>
