@@ -162,7 +162,10 @@ export default async function QuestionsPage({
             <CardTitle>Questão Aleatória</CardTitle>
           </CardHeader>
           <CardContent>
-            <QuestionInteractive question={randomQuestion!} />
+            <QuestionInteractive
+              key={randomQuestion?.id}
+              question={randomQuestion!}
+            />
           </CardContent>
         </Card>
 
@@ -171,11 +174,17 @@ export default async function QuestionsPage({
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
           <CardContent>
-            <QuestionsFilter topics={topics} years={years} types={types} />
+            <QuestionsFilter
+              key={`${topics.join(",")}-${years.join(",")}-${types.join(",")}`}
+              topics={topics}
+              years={years}
+              types={types}
+            />
           </CardContent>
         </Card>
 
         <QuestionsTable
+          key={`${questions.map((q) => q.id).join(",")}-${filters.page}-${filters.limit}-${filters.search}-${filters.topic}-${filters.year}-${filters.type}`}
           questions={questions}
           currentPage={filters.page}
           totalPages={totalPages}

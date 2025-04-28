@@ -19,6 +19,11 @@ interface ImportQuestion {
   images: string[];
 }
 
+function cleanText(text: string | null): string {
+  if (!text) return "";
+  return text.replace(/[\n\t]+/g, " ").trim();
+}
+
 export async function POST() {
   try {
     // 1. Fetch questions.json
@@ -65,8 +70,8 @@ export async function POST() {
           year: q.year,
           type: q.type,
           number: q.number,
-          statement: q.statement,
-          explanation: q.explanation ?? "",
+          statement: cleanText(q.statement),
+          explanation: cleanText(q.explanation),
           images: q.images,
         }));
         await tx.question.createMany({
@@ -101,7 +106,7 @@ export async function POST() {
             });
           return Array.from(uniq.values()).map((opt) => ({
             questionId: qId,
-            text: opt.text,
+            text: cleanText(opt.text),
             images: opt.images,
             isCorrect: opt.isCorrect,
           }));
