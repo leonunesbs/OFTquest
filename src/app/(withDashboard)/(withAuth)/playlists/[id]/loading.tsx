@@ -3,7 +3,7 @@ import { Card, CardContent } from "~/components/ui/card";
 
 export default function PlaylistLoading() {
   return (
-    <div className="flex h-[calc(100vh-4rem)] w-full items-center justify-center bg-gradient-to-b from-background to-muted/20">
+    <div className="flex h-[calc(100vh-4rem)] w-full items-center justify-center">
       <Card className="flex flex-col items-center gap-6 bg-card/50 p-8 backdrop-blur-sm">
         <div className="relative">
           <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20" />
