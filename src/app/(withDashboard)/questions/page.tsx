@@ -66,86 +66,81 @@ function buildWhereClause({
   return where;
 }
 
-async function fetchQuestionsData(
-  where: Prisma.QuestionWhereInput,
-  page: number,
-  limit: number,
-) {
-  const [questions, totalQuestions] = await Promise.all([
-    db.question.findMany({
-      where,
-      orderBy: [{ year: "desc" }, { type: "asc" }, { number: "asc" }],
-      skip: (page - 1) * limit,
-      take: limit,
-      include: {
-        options: {
-          select: {
-            isCorrect: true,
+async function getQuestionsData(searchParams: SearchParams) {
+  "use server";
+  const filters = parseSearchParams(searchParams);
+  const where = buildWhereClause(filters);
+
+  const [questions, totalQuestions, topics, years, types, randomQuestion] =
+    await Promise.all([
+      db.question.findMany({
+        where,
+        orderBy: [{ year: "desc" }, { type: "asc" }, { number: "asc" }],
+        skip: (filters.page - 1) * filters.limit,
+        take: filters.limit,
+        include: {
+          options: {
+            select: {
+              isCorrect: true,
+            },
           },
+          topics: true,
         },
-        topics: true,
-      },
-    }),
-    db.question.count({ where }),
-  ]);
+      }),
+      db.question.count({ where }),
+      db.topic
+        .findMany({
+          select: { name: true },
+        })
+        .then((topics) => topics.map((t) => t.name)),
+      db.question
+        .groupBy({
+          by: ["year"],
+        })
+        .then((years) => years.map((y) => y.year).sort((a, b) => b - a)),
+      db.question
+        .groupBy({
+          by: ["type"],
+        })
+        .then((types) => types.map((t) => t.type)),
+      db.question.findFirst({
+        where: {},
+        orderBy: {
+          id: "asc",
+        },
+        skip: Math.floor(Math.random() * (await db.question.count({ where }))),
+        include: {
+          options: true,
+          topics: true,
+        },
+      }),
+    ]);
 
   return {
     questions,
-    totalQuestions,
-    totalPages: Math.ceil(totalQuestions / limit),
+    totalPages: Math.ceil(totalQuestions / filters.limit),
+    topics,
+    years,
+    types,
+    randomQuestion,
+    filters,
   };
-}
-
-async function fetchFilterOptions() {
-  const [topics, years, types] = await Promise.all([
-    db.topic
-      .findMany({
-        select: { name: true },
-      })
-      .then((topics) => topics.map((t) => t.name)),
-    db.question
-      .groupBy({
-        by: ["year"],
-      })
-      .then((years) => years.map((y) => y.year).sort((a, b) => b - a)),
-    db.question
-      .groupBy({
-        by: ["type"],
-      })
-      .then((types) => types.map((t) => t.type)),
-  ]);
-
-  return { topics, years, types };
-}
-
-async function fetchRandomQuestion(totalQuestions: number) {
-  return db.question.findFirst({
-    where: {},
-    orderBy: {
-      id: "asc",
-    },
-    skip: Math.floor(Math.random() * totalQuestions),
-    include: {
-      options: true,
-      topics: true,
-    },
-  });
 }
 
 export default async function QuestionsPage({
   searchParams,
 }: {
-  searchParams: Promise<SearchParams>;
+  searchParams: SearchParams;
 }) {
-  const filters = parseSearchParams(await searchParams);
-  const where = buildWhereClause(filters);
-
-  const [{ questions, totalPages }, { topics, years, types }, randomQuestion] =
-    await Promise.all([
-      fetchQuestionsData(where, filters.page, filters.limit),
-      fetchFilterOptions(),
-      fetchRandomQuestion(await db.question.count({ where })),
-    ]);
+  const {
+    questions,
+    totalPages,
+    topics,
+    years,
+    types,
+    randomQuestion,
+    filters,
+  } = await getQuestionsData(searchParams);
 
   return (
     <div className="container mx-auto">

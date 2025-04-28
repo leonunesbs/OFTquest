@@ -208,6 +208,17 @@ export const questionRouter = createTRPCRouter({
     return topics.map((t) => t.name);
   }),
 
+  // Obter lista de temas disponíveis (versão pública)
+  getTopicsPublic: publicProcedure.query(async ({ ctx }) => {
+    const topics = await ctx.db.topic.findMany({
+      select: {
+        name: true,
+      },
+    });
+
+    return topics.map((t) => t.name);
+  }),
+
   // Criar nova questão
   create: protectedProcedure
     .input(
@@ -448,5 +459,85 @@ export const questionRouter = createTRPCRouter({
       });
 
       return questions;
+    }),
+
+  // Listar questões (versão pública)
+  list: publicProcedure
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(100).default(10),
+        search: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { page, limit, search } = input;
+      const skip = (page - 1) * limit;
+
+      // Construir condição de busca
+      const where = search
+        ? {
+            OR: [
+              {
+                topic: {
+                  contains: search,
+                  mode: "insensitive" as Prisma.QueryMode,
+                },
+              },
+              {
+                subtopic: {
+                  contains: search,
+                  mode: "insensitive" as Prisma.QueryMode,
+                },
+              },
+              {
+                statement: {
+                  contains: search,
+                  mode: "insensitive" as Prisma.QueryMode,
+                },
+              },
+            ],
+          }
+        : {};
+
+      // Buscar questões
+      const questions = await ctx.db.question.findMany({
+        where,
+        orderBy: [{ year: "desc" }, { number: "asc" }],
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          year: true,
+          type: true,
+          number: true,
+          statement: true,
+          images: true,
+          subtopic: true,
+          options: {
+            select: {
+              id: true,
+              text: true,
+              images: true,
+              isCorrect: true,
+            },
+          },
+          topics: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      // Contar total para paginação
+      const total = await ctx.db.question.count({ where });
+
+      return {
+        questions,
+        total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+      };
     }),
 });

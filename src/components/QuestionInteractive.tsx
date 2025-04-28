@@ -1,13 +1,14 @@
 "use client";
 
 import { AlertCircle, Check } from "lucide-react";
+import { useCallback, useState } from "react";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
+import { SafeHtmlContent } from "./SafeHtmlContent";
 
 interface QuestionInteractiveProps {
   question?: {
@@ -26,33 +27,32 @@ interface QuestionInteractiveProps {
 export default function QuestionInteractive({
   question,
 }: QuestionInteractiveProps) {
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [showAnswer, setShowAnswer] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<string | null>();
+  const [showAnswer, setShowAnswer] = useState<boolean>();
 
-  const handleOptionSelect = (value: string) => {
+  const handleOptionSelect = useCallback((value: string) => {
     setSelectedOption(value);
-  };
+  }, []);
 
-  const handleConfirmAnswer = () => {
+  const handleConfirmAnswer = useCallback(() => {
     setShowAnswer(true);
-  };
-
-  const isCorrect = selectedOption
-    ? (question?.options.find((opt) => opt.id === selectedOption)?.isCorrect ??
-      false)
-    : false;
+  }, []);
 
   if (!question) {
     return null;
   }
 
+  const isCorrect = selectedOption
+    ? (question.options.find((opt) => opt.id === selectedOption)?.isCorrect ??
+      false)
+    : false;
+
   return (
     <div className="space-y-4">
       {question.statement && (
-        <div
-          dangerouslySetInnerHTML={{ __html: question.statement }}
-          className="prose mb-4 dark:prose-invert"
-        />
+        <div className="prose mb-4 dark:prose-invert">
+          <SafeHtmlContent content={question.statement} />
+        </div>
       )}
       {question.images?.length > 0 && (
         <div className="my-4 flex flex-wrap justify-center gap-4">
@@ -64,6 +64,7 @@ export default function QuestionInteractive({
               width={400}
               height={300}
               className="rounded"
+              priority={index === 0}
             />
           ))}
         </div>
@@ -90,10 +91,9 @@ export default function QuestionInteractive({
             <RadioGroupItem value={option.id} id={option.id} className="mt-1" />
             <Label htmlFor={option.id} className="flex-1 cursor-pointer">
               {option.text && (
-                <div
-                  dangerouslySetInnerHTML={{ __html: option.text }}
-                  className="prose dark:prose-invert"
-                />
+                <div className="prose dark:prose-invert">
+                  <SafeHtmlContent content={option.text} />
+                </div>
               )}
               {option.images.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-4">
@@ -105,6 +105,7 @@ export default function QuestionInteractive({
                       width={300}
                       height={200}
                       className="rounded"
+                      loading={imgIndex === 0 ? "eager" : "lazy"}
                     />
                   ))}
                 </div>
