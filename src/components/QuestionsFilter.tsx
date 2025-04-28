@@ -47,13 +47,13 @@ export default function QuestionsFilter({
     if (newSearch) params.set("search", newSearch);
     else params.delete("search");
 
-    if (newTopic) params.set("topic", newTopic);
+    if (newTopic && newTopic !== "all") params.set("topic", newTopic);
     else params.delete("topic");
 
-    if (newYear) params.set("year", newYear);
+    if (newYear && newYear !== "all") params.set("year", newYear);
     else params.delete("year");
 
-    if (newType) params.set("type", newType);
+    if (newType && newType !== "all") params.set("type", newType);
     else params.delete("type");
 
     // Reset to page 1 when filters change
@@ -90,7 +90,7 @@ export default function QuestionsFilter({
             <SelectValue placeholder="Filtrar por tema" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os temas</SelectItem>
+            <SelectItem value="all">Todos os temas</SelectItem>
             {topics.map((t) => (
               <SelectItem key={t} value={t}>
                 {t}
@@ -107,7 +107,7 @@ export default function QuestionsFilter({
             <SelectValue placeholder="Filtrar por ano" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os anos</SelectItem>
+            <SelectItem value="all">Todos os anos</SelectItem>
             {years.map((y) => (
               <SelectItem key={y} value={y.toString()}>
                 {y}
@@ -124,7 +124,7 @@ export default function QuestionsFilter({
             <SelectValue placeholder="Filtrar por tipo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os tipos</SelectItem>
+            <SelectItem value="all">Todos os tipos</SelectItem>
             {types.map((t) => (
               <SelectItem key={t} value={t}>
                 {t === "teorica-1"

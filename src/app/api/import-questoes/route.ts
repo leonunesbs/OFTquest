@@ -19,241 +19,154 @@ interface ImportQuestion {
   images: string[];
 }
 
-const CHUNK_SIZE = 25; // Process questions in chunks of 50
-
 export async function POST() {
   try {
-    // Buscar questions.json via HTTP (fetch)
-    const response = await fetch(
+    // 1. Fetch questions.json
+    const res = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/questions.json`,
     );
-
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar questions.json: ${response.statusText}`);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch questions.json: ${res.statusText}`);
     }
+    const questions = (await res.json()) as ImportQuestion[];
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const questions: ImportQuestion[] = await response.json();
+    // 2. Extract unique topic names across all questions
+    const allTopicNames = Array.from(
+      new Set(
+        questions.flatMap((q) =>
+          q.topic ? q.topic.split(", ").map((t) => t.trim()) : [],
+        ),
+      ),
+    );
 
-    // Process questions in chunks
-    for (let i = 0; i < questions.length; i += CHUNK_SIZE) {
-      const chunk = questions.slice(i, i + CHUNK_SIZE);
-
-      try {
-        await db.$transaction(
-          async (tx) => {
-            // 1. Coletar todos os tópicos únicos
-            const allTopics = new Set<string>();
-            chunk.forEach((q) => {
-              if (q.topic) {
-                q.topic.split(", ").forEach((t) => allTopics.add(t.trim()));
-              }
-            });
-
-            // 2. Criar ou encontrar tópicos
-            const topics = await Promise.all(
-              Array.from(allTopics).map(async (name) => {
-                return tx.topic.upsert({
-                  where: { name },
-                  create: { name },
-                  update: {},
-                });
-              }),
-            );
-
-            // 3. Criar mapa de tópicos
-            const topicMap = new Map(topics.map((t) => [t.name, t]));
-
-            // 4. Criar questões (sem o campo topic)
-            await tx.question.createMany({
-              data: chunk.map((q) => ({
-                year: q.year,
-                type: q.type,
-                number: q.number,
-                statement: q.statement,
-                explanation: q.explanation ?? "",
-                images: q.images,
-              })),
-              skipDuplicates: true,
-            });
-
-            // 5. Buscar IDs das questões criadas
-            const questionIds = await tx.question.findMany({
-              where: {
-                OR: chunk.map((q) => ({
-                  AND: {
-                    year: q.year,
-                    type: q.type,
-                    number: q.number,
-                  },
-                })),
-              },
-              select: {
-                id: true,
-                year: true,
-                type: true,
-                number: true,
-              },
-            });
-
-            // 6. Conectar questões com seus tópicos
-            const questionTopicConnections = chunk
-              .map((q) => {
-                const questionId = questionIds.find(
-                  (qId) =>
-                    qId.year === q.year &&
-                    qId.type === q.type &&
-                    qId.number === q.number,
-                )?.id;
-
-                if (!questionId || !q.topic) return null;
-
-                const topicIds = q.topic
-                  .split(", ")
-                  .map((t) => topicMap.get(t.trim())?.id)
-                  .filter((id): id is string => id !== undefined);
-
-                return topicIds.length > 0
-                  ? {
-                      questionId,
-                      topicIds,
-                    }
-                  : null;
-              })
-              .filter(
-                (conn): conn is { questionId: string; topicIds: string[] } =>
-                  conn !== null,
-              );
-
-            // Execute updates sequentially instead of using Promise.all
-            for (const conn of questionTopicConnections) {
-              await tx.question.update({
-                where: { id: conn.questionId },
-                data: {
-                  topics: {
-                    connect: conn.topicIds.map((id) => ({ id })),
-                  },
-                },
-              });
-            }
-
-            // Create options for this chunk
-            const chunkOptions = chunk.flatMap((q) => {
-              const questionId = questionIds.find(
-                (qId) =>
-                  qId.year === q.year &&
-                  qId.type === q.type &&
-                  qId.number === q.number,
-              )?.id;
-              if (!questionId) {
-                throw new Error(
-                  `Failed to find question ID for year ${q.year}, type ${q.type}, number ${q.number}`,
-                );
-              }
-              // Filter out options with empty text and image, and ensure no duplicates
-              const uniqueOptions = new Map<string, QuestionOption>();
-              q.options
-                .filter((opt) => opt.text !== "" || opt.images.length > 0)
-                .forEach((opt) => {
-                  const key = `${opt.text}-${opt.images.join(",")}`;
-                  if (!uniqueOptions.has(key)) {
-                    uniqueOptions.set(key, opt);
-                  }
-                });
-
-              return Array.from(uniqueOptions.values()).map((opt) => ({
-                questionId,
-                text: opt.text,
-                images: opt.images,
-                isCorrect: opt.isCorrect,
-              }));
-            });
-
-            // Create new options
-            await tx.option.createMany({
-              data: chunkOptions,
-              skipDuplicates: true,
-            });
-          },
-          {
-            timeout: 10 * 60 * 1000, // 10 minutes timeout per chunk
-            maxWait: 10 * 60 * 1000, // 10 minutes max wait per chunk
-          },
-        );
-      } catch (chunkError) {
-        console.error(
-          `Erro ao processar chunk ${i / CHUNK_SIZE + 1}:`,
-          chunkError,
-        );
-        throw new Error(
-          `Falha ao processar chunk de questões ${i / CHUNK_SIZE + 1}`,
-        );
-      }
-    }
-
-    // Generate TopicPrevalences after all questions are imported
+    // Execute in a single transaction to minimize round-trips
     await db.$transaction(
       async (tx) => {
-        // Get all questions with their topics
-        const questionsWithTopics = await tx.question.findMany({
-          include: {
-            topics: true,
-          },
+        // 3. Upsert all topics once
+        await Promise.all(
+          allTopicNames.map((name) =>
+            tx.topic.upsert({
+              where: { name },
+              create: { name },
+              update: {},
+            }),
+          ),
+        );
+
+        // 4. Fetch topic IDs
+        const topics = await tx.topic.findMany({
+          where: { name: { in: allTopicNames } },
+          select: { id: true, name: true },
+        });
+        const topicMap = new Map(topics.map((t) => [t.name, t.id]));
+
+        // 5. Bulk create questions
+        const questionData = questions.map((q) => ({
+          year: q.year,
+          type: q.type,
+          number: q.number,
+          statement: q.statement,
+          explanation: q.explanation ?? "",
+          images: q.images,
+        }));
+        await tx.question.createMany({
+          data: questionData,
+          skipDuplicates: true,
         });
 
-        // Calculate topic statistics
-        const topicStats = new Map<string, Map<string, Map<number, number>>>();
+        // 6. Fetch created question IDs
+        const created = await tx.question.findMany({
+          where: {
+            OR: questions.map((q) => ({
+              year: q.year,
+              type: q.type,
+              number: q.number,
+            })),
+          },
+          select: { id: true, year: true, type: true, number: true },
+        });
+        const questionMap = new Map(
+          created.map((r) => [`${r.year}-${r.type}-${r.number}`, r.id]),
+        );
 
-        questionsWithTopics.forEach((question) => {
-          question.topics.forEach((topic) => {
-            if (!topicStats.has(topic.name)) {
-              topicStats.set(topic.name, new Map());
-            }
-            const typeMap = topicStats.get(topic.name)!;
+        // 7. Bulk create options
+        const optionsData = questions.flatMap((q) => {
+          const qId = questionMap.get(`${q.year}-${q.type}-${q.number}`)!;
+          const uniq = new Map<string, QuestionOption>();
+          q.options
+            .filter((opt) => opt.text || opt.images.length)
+            .forEach((opt) => {
+              const key = `${opt.text}-${opt.images.join(",")}`;
+              if (!uniq.has(key)) uniq.set(key, opt);
+            });
+          return Array.from(uniq.values()).map((opt) => ({
+            questionId: qId,
+            text: opt.text,
+            images: opt.images,
+            isCorrect: opt.isCorrect,
+          }));
+        });
+        if (optionsData.length) {
+          await tx.option.createMany({
+            data: optionsData,
+            skipDuplicates: true,
+          });
+        }
 
-            if (!typeMap.has(question.type)) {
-              typeMap.set(question.type, new Map());
-            }
-            const yearMap = typeMap.get(question.type)!;
+        // 8. Bulk connect topics via raw INSERT on the implicit join table
+        const connections = questions.flatMap((q) => {
+          const qId = questionMap.get(`${q.year}-${q.type}-${q.number}`);
+          if (!q.topic || !qId) return [];
+          return q.topic.split(", ").map((name) => ({
+            questionId: qId,
+            topicId: topicMap.get(name)!,
+          }));
+        });
+        if (connections.length) {
+          const values = connections
+            .map(({ questionId, topicId }) => `('${questionId}','${topicId}')`)
+            .join(",");
+          // Adjust table/column names per your Prisma setup
+          await tx.$executeRawUnsafe(
+            `INSERT INTO "public"."_QuestionToTopic" ("A","B") VALUES ${values} ON CONFLICT ("A","B") DO NOTHING`,
+          );
+        }
 
-            yearMap.set(question.year, (yearMap.get(question.year) ?? 0) + 1);
+        // 9. Compute and upsert topic prevalence
+        //    Aggregate counts in-memory, then upsert in a batch
+        const stats = new Map<string, Map<string, Map<number, number>>>();
+
+        const questionsWithTopics = await tx.question.findMany({
+          include: { topics: true },
+        });
+        questionsWithTopics.forEach((q) => {
+          q.topics.forEach((t) => {
+            if (!stats.has(t.name)) stats.set(t.name, new Map());
+            const typeMap = stats.get(t.name)!;
+            if (!typeMap.has(q.type)) typeMap.set(q.type, new Map());
+            const yearMap = typeMap.get(q.type)!;
+            yearMap.set(q.year, (yearMap.get(q.year) ?? 0) + 1);
           });
         });
 
-        // Calculate total questions per year and type
-        const yearTypeTotals = new Map<string, number>();
-        questionsWithTopics.forEach((question) => {
-          const key = `${question.year}-${question.type}`;
-          yearTypeTotals.set(key, (yearTypeTotals.get(key) ?? 0) + 1);
+        // Totals per year/type
+        const totals = new Map<string, number>();
+        questionsWithTopics.forEach((q) => {
+          const key = `${q.year}-${q.type}`;
+          totals.set(key, (totals.get(key) ?? 0) + 1);
         });
 
-        // Prepare and upsert TopicPrevalence records
-        const prevalencePromises: Promise<
-          Prisma.TopicPrevalenceGetPayload<object>
-        >[] = [];
-
-        topicStats.forEach((typeMap, topic) => {
+        // Prepare upserts
+        const upserts: Promise<Prisma.TopicPrevalenceGetPayload<object>>[] = [];
+        stats.forEach((typeMap, topic) => {
           typeMap.forEach((yearMap, examType) => {
             yearMap.forEach((count, year) => {
-              const totalQuestions =
-                yearTypeTotals.get(`${year}-${examType}`) ?? 0;
-              const prevalence =
-                totalQuestions > 0 ? count / totalQuestions : 0;
-
-              prevalencePromises.push(
+              const total = totals.get(`${year}-${examType}`) ?? 0;
+              const prevalence = total ? count / total : 0;
+              upserts.push(
                 tx.topicPrevalence.upsert({
-                  where: {
-                    topic_examType_year: {
-                      topic,
-                      examType,
-                      year,
-                    },
-                  },
-                  update: {
-                    count,
-                    prevalence,
-                    updatedAt: new Date(),
-                  },
+                  where: { topic_examType_year: { topic, examType, year } },
+                  update: { count, prevalence, updatedAt: new Date() },
                   create: {
                     topic,
                     examType,
@@ -267,21 +180,17 @@ export async function POST() {
             });
           });
         });
-
-        // Execute prevalence updates sequentially instead of using Promise.all
-        for (const promise of prevalencePromises) {
-          await promise;
-        }
+        await Promise.all(upserts);
       },
       {
-        timeout: 10 * 60 * 1000, // 10 minutes timeout
-        maxWait: 10 * 60 * 1000, // 10 minutes max wait
+        timeout: 1000 * 60 * 5, // 5 minutes
+        maxWait: 1000 * 60 * 5, // 5 minutes
       },
     );
 
-    return NextResponse.json({ message: "Importação concluída com sucesso!" });
-  } catch (error) {
-    console.error("Erro ao importar questões:", error);
+    return NextResponse.json({ message: "Import concluído com sucesso!" });
+  } catch (err) {
+    console.error("Import error:", err);
     return NextResponse.json({ error: "Falha na importação" }, { status: 500 });
   } finally {
     await db.$disconnect();

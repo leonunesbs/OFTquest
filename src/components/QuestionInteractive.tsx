@@ -10,7 +10,7 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 
 interface QuestionInteractiveProps {
-  question: {
+  question?: {
     id: string;
     statement: string;
     images: string[];
@@ -38,8 +38,13 @@ export default function QuestionInteractive({
   };
 
   const isCorrect = selectedOption
-    ? question.options.find((opt) => opt.id === selectedOption)?.isCorrect
+    ? (question?.options.find((opt) => opt.id === selectedOption)?.isCorrect ??
+      false)
     : false;
+
+  if (!question) {
+    return null;
+  }
 
   return (
     <div className="space-y-4">
@@ -49,7 +54,7 @@ export default function QuestionInteractive({
           className="prose mb-4 dark:prose-invert"
         />
       )}
-      {question.images.length > 0 && (
+      {question.images?.length > 0 && (
         <div className="my-4 flex flex-wrap justify-center gap-4">
           {question.images.map((image, index) => (
             <Image
@@ -69,7 +74,7 @@ export default function QuestionInteractive({
         onValueChange={handleOptionSelect}
         disabled={showAnswer}
       >
-        {question.options.map((option) => (
+        {question.options?.map((option) => (
           <div
             key={option.id}
             className={`flex items-start space-x-2 rounded-lg border p-4 ${

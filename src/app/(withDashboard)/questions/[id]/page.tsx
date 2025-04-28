@@ -14,7 +14,7 @@ import QuestionInteractive from "~/components/QuestionInteractive";
 import { QuestionNavigationForm } from "~/components/QuestionNavigationForm";
 import QuestionPagination from "~/components/QuestionPagination";
 import { Button } from "~/components/ui/button";
-import { api, HydrateClient } from "~/trpc/server";
+import { api } from "~/trpc/server";
 
 export async function generateMetadata({
   params,
@@ -62,67 +62,64 @@ export default async function QuestionPage({
   });
 
   return (
-    <HydrateClient>
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Navegar para outra prova</CardTitle>
-            <CardDescription>
-              Selecione o ano e tipo de prova para navegar para a primeira
-              questão
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <QuestionNavigationForm
-              currentYear={question.year}
-              currentType={question.type}
-            />
-          </CardContent>
-        </Card>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Navegar para outra prova</CardTitle>
+          <CardDescription>
+            Selecione o ano e tipo de prova para navegar para a primeira questão
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <QuestionNavigationForm
+            currentYear={question.year}
+            currentType={question.type}
+          />
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <QuestionPagination
-              year={question.year}
-              type={question.type}
-              currentNumber={question.number}
-              questions={questions}
-              baseUrl="/questions"
-            />
-          </CardHeader>
-        </Card>
+      <Card>
+        <CardHeader>
+          <QuestionPagination
+            year={question.year}
+            type={question.type}
+            currentNumber={question.number}
+            questions={questions}
+            baseUrl="/questions"
+          />
+        </CardHeader>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-lg">
-                  Questão {question.year} – {question.type} – {question.number}
-                </CardTitle>
-                <CardDescription>
-                  Tema: {question.topics?.map((t) => t.name).join(", ")}{" "}
-                  {question.subtopic && `| ${question.subtopic}`}
-                </CardDescription>
-              </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="text-lg">
+                Questão {question.year} – {question.type} – {question.number}
+              </CardTitle>
+              <CardDescription>
+                Tema: {question.topics?.map((t) => t.name).join(", ")}{" "}
+                {question.subtopic && `| ${question.subtopic}`}
+              </CardDescription>
             </div>
-          </CardHeader>
-          <CardContent>
-            <QuestionInteractive question={question} />
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <nav aria-label="Navegação entre questões" className="flex gap-2">
-              <Button variant="outline" asChild>
-                <Link
-                  href="/questions"
-                  aria-label="Voltar para a lista de questões"
-                >
-                  Voltar
-                </Link>
-              </Button>
-            </nav>
-          </CardFooter>
-        </Card>
-      </div>
-    </HydrateClient>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <QuestionInteractive question={question} />
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <nav aria-label="Navegação entre questões" className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link
+                href="/questions"
+                aria-label="Voltar para a lista de questões"
+              >
+                Voltar
+              </Link>
+            </Button>
+          </nav>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }

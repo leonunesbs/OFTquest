@@ -4,6 +4,7 @@ import QuestionsFilter from "~/components/QuestionsFilter";
 import QuestionsTable from "~/components/QuestionsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/server/db";
+import { HydrateClient } from "~/trpc/server";
 
 type SearchParams = {
   page?: string | string[];
@@ -155,32 +156,35 @@ export default async function QuestionsPage({
         </p>
       </div>
 
-      {randomQuestion && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Questão Aleatória</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <QuestionInteractive question={randomQuestion} />
-          </CardContent>
-        </Card>
-      )}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Questão Aleatória</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <HydrateClient>
+            <QuestionInteractive question={randomQuestion!} />
+          </HydrateClient>
+        </CardContent>
+      </Card>
 
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <QuestionsFilter topics={topics} years={years} types={types} />
+          <HydrateClient>
+            <QuestionsFilter topics={topics} years={years} types={types} />
+          </HydrateClient>
         </CardContent>
       </Card>
-
-      <QuestionsTable
-        questions={questions}
-        currentPage={filters.page}
-        totalPages={totalPages}
-        currentFilters={filters}
-      />
+      <HydrateClient>
+        <QuestionsTable
+          questions={questions}
+          currentPage={filters.page}
+          totalPages={totalPages}
+          currentFilters={filters}
+        />
+      </HydrateClient>
     </div>
   );
 }
