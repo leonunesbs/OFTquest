@@ -12,8 +12,11 @@ import {
   SidebarTrigger,
 } from "~/components/ui/sidebar";
 
+import { LogOut } from "lucide-react";
+import Link from "next/link";
 import { AppSidebar } from "~/components/AppSidebar";
 import { ThemeToggle } from "~/components/ThemeToggle";
+import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 
 function DashboardHeader() {
@@ -37,7 +40,13 @@ function DashboardHeader() {
         </Breadcrumb>
       </div>
       <div className="ml-auto flex items-center gap-2">
-        <ThemeToggle />
+        <ThemeToggle variant="single" />
+        <Button asChild variant="ghost" size="icon">
+          <Link href="/api/auth/signout">
+            <LogOut className="h-4 w-4" />
+            <span className="sr-only">Sair</span>
+          </Link>
+        </Button>
       </div>
     </header>
   );

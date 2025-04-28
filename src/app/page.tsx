@@ -11,6 +11,7 @@ import { Check } from "lucide-react";
 import { type Metadata } from "next";
 import Link from "next/link";
 import { CheckoutButton } from "~/components/CheckoutButton";
+import { ThemeToggle } from "~/components/ThemeToggle";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/server/auth";
@@ -44,9 +45,7 @@ export default async function Home() {
         <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
           {/* Hero Section */}
           <div className="flex flex-col items-center gap-4 text-center">
-            <Badge variant="secondary" className="mb-2">
-              Novo
-            </Badge>
+            <ThemeToggle variant="single" />
             <h1 className="text-4xl font-black tracking-tight sm:text-6xl">
               <span className="text-muted-foreground">OFT</span>
               <span className="text-foreground">.quest</span>
