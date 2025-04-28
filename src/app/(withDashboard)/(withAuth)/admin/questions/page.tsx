@@ -111,12 +111,7 @@ export default async function QuestionsPage({
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <QuestionsFilter
-            topics={topics}
-            years={years}
-            types={types}
-            currentFilters={{ search, topic, year, type }}
-          />
+          <QuestionsFilter topics={topics} years={years} types={types} />
         </CardContent>
       </Card>
 
