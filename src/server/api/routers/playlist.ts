@@ -192,12 +192,12 @@ export const playlistRouter = createTRPCRouter({
           endDate.setDate(startDate.getDate() + 6);
           endDate.setHours(23, 59, 59, 999);
           break;
-        case "month":
+        case "last30days":
           startDate.setDate(1);
           startDate.setHours(0, 0, 0, 0);
           endDate.setHours(23, 59, 59, 999);
           break;
-        case "last30days":
+        case "month":
           startDate.setDate(now.getDate() - 30);
           startDate.setHours(0, 0, 0, 0);
           endDate.setHours(23, 59, 59, 999);
@@ -282,7 +282,7 @@ export const playlistRouter = createTRPCRouter({
             accuracy: dayAccuracy,
           });
         }
-      } else if (input.period === "month") {
+      } else if (input.period === "last30days") {
         // Group by day
         for (let i = 0; i < 30; i++) {
           const dayStart = new Date(startDate);
@@ -317,7 +317,7 @@ export const playlistRouter = createTRPCRouter({
             accuracy: dayAccuracy,
           });
         }
-      } else if (input.period === "last30days") {
+      } else if (input.period === "month") {
         // Group by week
         const weeks = Math.ceil(
           (endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000),
@@ -370,11 +370,11 @@ export const playlistRouter = createTRPCRouter({
           const monthAccuracy = monthCount > 0 ? monthCorrect / monthCount : 0;
 
           questionsByPeriod.push({
-            period: monthStart.toLocaleDateString("pt-BR", { month: "short" }),
+            period: `${monthStart.toLocaleDateString("pt-BR", { month: "short" })}/${monthStart.getFullYear()}`,
             count: monthCount,
           });
           accuracyByPeriod.push({
-            period: monthStart.toLocaleDateString("pt-BR", { month: "short" }),
+            period: `${monthStart.toLocaleDateString("pt-BR", { month: "short" })}/${monthStart.getFullYear()}`,
             accuracy: monthAccuracy,
           });
         }
