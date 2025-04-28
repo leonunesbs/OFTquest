@@ -95,7 +95,7 @@ export default async function Home() {
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
               <span className="text-muted-foreground">OFT</span>
-              <span className="text-primary">.quest</span>
+              <span className="text-foreground">.quest</span>
             </h1>
             <p className="max-w-[600px] text-lg text-muted-foreground">
               Acesse gratuitamente questões do CBO com gabarito. Prepare-se para
@@ -249,8 +249,8 @@ export default async function Home() {
         </div>
 
         {/* Footer */}
-        <footer className="w-full border-t py-6 text-center">
-          <div className="container">
+        <footer className="w-full border-t bg-secondary py-4 text-center text-secondary-foreground">
+          <div>
             <span className="text-muted-foreground">OFT.</span>
             <span className="text-primary">quest</span>
             <span className="ml-2 text-sm text-muted-foreground">

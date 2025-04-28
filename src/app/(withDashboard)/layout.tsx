@@ -13,8 +13,8 @@ import {
 } from "~/components/ui/sidebar";
 
 import { AppSidebar } from "~/components/AppSidebar";
-import { Separator } from "~/components/ui/separator";
 import { ThemeToggle } from "~/components/ThemeToggle";
+import { Separator } from "~/components/ui/separator";
 
 function DashboardHeader() {
   return (

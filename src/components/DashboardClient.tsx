@@ -385,7 +385,11 @@ export default function DashboardClient({
                   cursor={false}
                   content={<ChartTooltipContent hideLabel />}
                 />
-                <Bar dataKey="count" fill="hsl(var(--chart-1))" radius={8}>
+                <Bar
+                  dataKey="count"
+                  className="fill-sidebar-foreground"
+                  radius={8}
+                >
                   <LabelList position="top" offset={12} fontSize={12} />
                 </Bar>
               </BarChart>
