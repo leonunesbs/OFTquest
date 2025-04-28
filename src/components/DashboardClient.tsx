@@ -163,39 +163,37 @@ export default function DashboardClient({ metrics }: { metrics: MetricsData }) {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
-            <div className="h-[300px] sm:h-[400px]">
-              <ChartContainer config={questionsChartConfig}>
-                <BarChart
-                  data={metrics?.questionsByPeriod ?? []}
-                  margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+            <ChartContainer config={questionsChartConfig}>
+              <BarChart
+                data={metrics?.questionsByPeriod ?? []}
+                margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="period"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  tick={{ fontSize: 12 }}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent />}
+                />
+                <Bar
+                  dataKey="count"
+                  className="fill-sidebar-foreground"
+                  radius={[8, 8, 0, 0]}
                 >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="period"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tick={{ fontSize: 12 }}
+                  <LabelList
+                    position="top"
+                    offset={12}
+                    className="fill-foreground"
+                    fontSize={12}
                   />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                  />
-                  <Bar
-                    dataKey="count"
-                    className="fill-sidebar-foreground"
-                    radius={[8, 8, 0, 0]}
-                  >
-                    <LabelList
-                      position="top"
-                      offset={12}
-                      className="fill-foreground"
-                      fontSize={12}
-                    />
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
-            </div>
+                </Bar>
+              </BarChart>
+            </ChartContainer>
           </CardContent>
           <CardFooter className="flex-col items-start gap-2 p-4 text-xs sm:p-6 sm:text-sm">
             <div className="flex gap-2 font-medium leading-none">
@@ -229,54 +227,52 @@ export default function DashboardClient({ metrics }: { metrics: MetricsData }) {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
-            <div className="h-[300px] sm:h-[400px]">
-              <ChartContainer config={accuracyChartConfig}>
-                <LineChart
-                  data={metrics?.accuracyByPeriod ?? []}
-                  margin={{
-                    top: 20,
-                    right: 20,
-                    left: 20,
-                    bottom: 20,
+            <ChartContainer config={accuracyChartConfig}>
+              <LineChart
+                data={metrics?.accuracyByPeriod ?? []}
+                margin={{
+                  top: 20,
+                  right: 20,
+                  left: 20,
+                  bottom: 20,
+                }}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="period"
+                  tickLine={false}
+                  tickMargin={8}
+                  axisLine={false}
+                  tick={{ fontSize: 12 }}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="line" />}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="accuracy"
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                  dot={{
+                    fill: "#FFFFFF",
+                  }}
+                  activeDot={{
+                    r: 6,
                   }}
                 >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="period"
-                    tickLine={false}
-                    tickMargin={8}
-                    axisLine={false}
-                    tick={{ fontSize: 12 }}
+                  <LabelList
+                    position="top"
+                    offset={12}
+                    className="fill-foreground"
+                    fontSize={12}
+                    formatter={(value: number) =>
+                      `${(value * 100).toFixed(1)}%`
+                    }
                   />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="line" />}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="accuracy"
-                    stroke="#FFFFFF"
-                    strokeWidth={2}
-                    dot={{
-                      fill: "#FFFFFF",
-                    }}
-                    activeDot={{
-                      r: 6,
-                    }}
-                  >
-                    <LabelList
-                      position="top"
-                      offset={12}
-                      className="fill-foreground"
-                      fontSize={12}
-                      formatter={(value: number) =>
-                        `${(value * 100).toFixed(1)}%`
-                      }
-                    />
-                  </Line>
-                </LineChart>
-              </ChartContainer>
-            </div>
+                </Line>
+              </LineChart>
+            </ChartContainer>
           </CardContent>
           <CardFooter className="flex-col items-start gap-2 p-4 text-xs sm:p-6 sm:text-sm">
             <div className="flex gap-2 font-medium leading-none">
