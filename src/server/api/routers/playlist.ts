@@ -5,8 +5,8 @@ import {
   updateUserTopicInteraction,
 } from "~/server/services/playlistService";
 
-import { db } from "~/server/db";
 import { z } from "zod";
+import { db } from "~/server/db";
 
 export const playlistRouter = createTRPCRouter({
   // Get available topics
@@ -237,7 +237,8 @@ export const playlistRouter = createTRPCRouter({
 
       // Calculate period metrics
       const periodItems = playlistItems.filter(
-        (item) => item.respondedAt >= startDate && item.respondedAt <= endDate,
+        (item) =>
+          item.respondedAt! >= startDate && item.respondedAt! <= endDate,
       );
       const periodAnswered = periodItems.length;
       const periodCorrect = periodItems.filter((item) =>
@@ -262,7 +263,7 @@ export const playlistRouter = createTRPCRouter({
 
           const dayItems = periodItems.filter(
             (item) =>
-              item.respondedAt >= dayStart && item.respondedAt <= dayEnd,
+              item.respondedAt! >= dayStart && item.respondedAt! <= dayEnd,
           );
           const dayCount = dayItems.length;
           const dayCorrect = dayItems.filter((item) =>
@@ -291,7 +292,7 @@ export const playlistRouter = createTRPCRouter({
 
           const dayItems = periodItems.filter(
             (item) =>
-              item.respondedAt >= dayStart && item.respondedAt <= dayEnd,
+              item.respondedAt! >= dayStart && item.respondedAt! <= dayEnd,
           );
           const dayCount = dayItems.length;
           const dayCorrect = dayItems.filter((item) =>
@@ -330,7 +331,7 @@ export const playlistRouter = createTRPCRouter({
 
           const weekItems = periodItems.filter(
             (item) =>
-              item.respondedAt >= weekStart && item.respondedAt <= weekEnd,
+              item.respondedAt! >= weekStart && item.respondedAt! <= weekEnd,
           );
           const weekCount = weekItems.length;
           const weekCorrect = weekItems.filter((item) =>
@@ -358,7 +359,7 @@ export const playlistRouter = createTRPCRouter({
 
           const monthItems = periodItems.filter(
             (item) =>
-              item.respondedAt >= monthStart && item.respondedAt <= monthEnd,
+              item.respondedAt! >= monthStart && item.respondedAt! <= monthEnd,
           );
           const monthCount = monthItems.length;
           const monthCorrect = monthItems.filter((item) =>
