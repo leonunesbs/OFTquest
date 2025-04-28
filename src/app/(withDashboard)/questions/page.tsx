@@ -6,14 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/server/db";
 import { HydrateClient } from "~/trpc/server";
 
-type SearchParams = {
+type SearchParams = Promise<{
   page?: string | string[];
   limit?: string | string[];
   search?: string | string[];
   topic?: string | string[];
   year?: string | string[];
   type?: string | string[];
-};
+}>;
 
 type FilterParams = {
   page: number;
@@ -24,14 +24,17 @@ type FilterParams = {
   type: string;
 };
 
-function parseSearchParams(searchParams: SearchParams): FilterParams {
+async function parseSearchParams(
+  searchParams: SearchParams,
+): Promise<FilterParams> {
+  const params = await searchParams;
   return {
-    page: searchParams.page ? Number(searchParams.page) : 1,
-    limit: searchParams.limit ? Number(searchParams.limit) : 10,
-    search: searchParams.search?.toString() ?? "",
-    topic: searchParams.topic?.toString() ?? "",
-    year: searchParams.year ? Number(searchParams.year) : undefined,
-    type: searchParams.type?.toString() ?? "",
+    page: params.page ? Number(params.page) : 1,
+    limit: params.limit ? Number(params.limit) : 10,
+    search: params.search?.toString() ?? "",
+    topic: params.topic?.toString() ?? "",
+    year: params.year ? Number(params.year) : undefined,
+    type: params.type?.toString() ?? "",
   };
 }
 
@@ -68,7 +71,7 @@ function buildWhereClause({
 
 async function getQuestionsData(searchParams: SearchParams) {
   "use server";
-  const filters = parseSearchParams(searchParams);
+  const filters = await parseSearchParams(searchParams);
   const where = buildWhereClause(filters);
 
   const [questions, totalQuestions, topics, years, types, randomQuestion] =
