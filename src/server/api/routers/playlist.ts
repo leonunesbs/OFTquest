@@ -282,6 +282,41 @@ export const playlistRouter = createTRPCRouter({
           });
         }
       } else if (input.period === "month") {
+        // Group by day
+        for (let i = 0; i < 30; i++) {
+          const dayStart = new Date(startDate);
+          dayStart.setDate(startDate.getDate() + i);
+          const dayEnd = new Date(dayStart);
+          dayEnd.setHours(23, 59, 59, 999);
+
+          const dayItems = periodItems.filter(
+            (item) =>
+              item.respondedAt >= dayStart && item.respondedAt <= dayEnd,
+          );
+          const dayCount = dayItems.length;
+          const dayCorrect = dayItems.filter((item) =>
+            item.question.options.some(
+              (o) => o.id === item.selectedOptionId && o.isCorrect,
+            ),
+          ).length;
+          const dayAccuracy = dayCount > 0 ? dayCorrect / dayCount : 0;
+
+          questionsByPeriod.push({
+            period: dayStart.toLocaleDateString("pt-BR", {
+              day: "numeric",
+              month: "short",
+            }),
+            count: dayCount,
+          });
+          accuracyByPeriod.push({
+            period: dayStart.toLocaleDateString("pt-BR", {
+              day: "numeric",
+              month: "short",
+            }),
+            accuracy: dayAccuracy,
+          });
+        }
+      } else if (input.period === "last30days") {
         // Group by week
         const weeks = Math.ceil(
           (endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000),
@@ -340,41 +375,6 @@ export const playlistRouter = createTRPCRouter({
           accuracyByPeriod.push({
             period: monthStart.toLocaleDateString("pt-BR", { month: "short" }),
             accuracy: monthAccuracy,
-          });
-        }
-      } else if (input.period === "last30days") {
-        // Group by day
-        for (let i = 0; i < 30; i++) {
-          const dayStart = new Date(startDate);
-          dayStart.setDate(startDate.getDate() + i);
-          const dayEnd = new Date(dayStart);
-          dayEnd.setHours(23, 59, 59, 999);
-
-          const dayItems = periodItems.filter(
-            (item) =>
-              item.respondedAt >= dayStart && item.respondedAt <= dayEnd,
-          );
-          const dayCount = dayItems.length;
-          const dayCorrect = dayItems.filter((item) =>
-            item.question.options.some(
-              (o) => o.id === item.selectedOptionId && o.isCorrect,
-            ),
-          ).length;
-          const dayAccuracy = dayCount > 0 ? dayCorrect / dayCount : 0;
-
-          questionsByPeriod.push({
-            period: dayStart.toLocaleDateString("pt-BR", {
-              day: "numeric",
-              month: "short",
-            }),
-            count: dayCount,
-          });
-          accuracyByPeriod.push({
-            period: dayStart.toLocaleDateString("pt-BR", {
-              day: "numeric",
-              month: "short",
-            }),
-            accuracy: dayAccuracy,
           });
         }
       }
