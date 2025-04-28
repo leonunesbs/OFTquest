@@ -1,5 +1,7 @@
 "use client";
 
+import { signIn, useSession } from "next-auth/react";
+
 import { loadStripe } from "@stripe/stripe-js";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
@@ -9,9 +11,15 @@ const stripePromise = loadStripe(
 );
 
 export function CheckoutButton() {
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
+    if (!session) {
+      await signIn();
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch("/api/create-checkout-session", {

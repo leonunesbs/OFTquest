@@ -3,6 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata, type Viewport } from "next";
 import { Open_Sans } from "next/font/google";
 
+import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "~/components/ThemeProvider";
 import { Toaster } from "~/components/ui/toaster";
 import { TRPCReactProvider } from "~/trpc/react";
@@ -155,10 +156,12 @@ export default function RootLayout({
       </head>
       <body className={openSans.className}>
         <TRPCReactProvider>
-          <ThemeProvider>
-            {children}
-            <Toaster />
-          </ThemeProvider>
+          <SessionProvider>
+            <ThemeProvider>
+              {children}
+              <Toaster />
+            </ThemeProvider>
+          </SessionProvider>
         </TRPCReactProvider>
       </body>
     </html>
