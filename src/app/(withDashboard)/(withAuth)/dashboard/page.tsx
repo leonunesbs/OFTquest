@@ -8,29 +8,15 @@ import {
 import DashboardClient from "~/components/DashboardClient";
 import { api } from "~/trpc/server";
 
-export default async function DashboardPage() {
-  const timeZone = "America/Sao_Paulo";
-  const today = new Date();
-  const todaySP = new Date(today.toLocaleString("en-US", { timeZone }));
-  todaySP.setHours(0, 0, 0, 0);
+type Period = "week" | "month" | "last30days" | "year";
 
-  // Get last Sunday for week view
-  const startDate = new Date(todaySP);
-  const dayOfWeek = todaySP.getDay();
-  startDate.setDate(todaySP.getDate() - dayOfWeek);
-
-  const endDate = new Date(todaySP);
-  endDate.setHours(23, 59, 59, 999);
-
-  const topicMetrics = await api.playlist.getUserTopicMetrics({
-    startDate,
-    endDate,
-  });
-
-  const dailyMetrics = await api.playlist.getUserDailyMetrics({
-    startDate,
-    endDate,
-  });
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = ((await searchParams).period as Period) ?? "week";
+  const metrics = await api.playlist.getMetrics({ period });
 
   return (
     <div>
@@ -43,10 +29,7 @@ export default async function DashboardPage() {
         </CardHeader>
       </Card>
 
-      <DashboardClient
-        initialTopicMetrics={topicMetrics}
-        initialDailyMetrics={dailyMetrics}
-      />
+      <DashboardClient metrics={metrics} />
     </div>
   );
 }

@@ -110,118 +110,6 @@ export const playlistRouter = createTRPCRouter({
       return { playlistItem, isCorrect };
     }),
 
-  // Obter métricas do usuário por tema
-  getUserTopicMetrics: protectedProcedure
-    .input(
-      z.object({
-        startDate: z.date(),
-        endDate: z.date(),
-        examType: z.string().optional(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const userId = ctx.session.user.id;
-        const timeZone = "America/Sao_Paulo";
-        const today = new Date();
-        const todaySP = new Date(today.toLocaleString("en-US", { timeZone }));
-        todaySP.setHours(0, 0, 0, 0);
-
-        // Get user's topic interactions for the period
-        const topicInteractions = await ctx.db.userTopicInteraction.findMany({
-          where: {
-            userId,
-            lastSeenAt: {
-              gte: input.startDate,
-              lte: input.endDate,
-            },
-          },
-        });
-
-        // Get topic prevalences for the period
-        const topicPrevalences = await ctx.db.topicPrevalence.findMany({
-          where: {
-            year: {
-              gte: input.startDate.getFullYear(),
-              lte: input.endDate.getFullYear(),
-            },
-            ...(input.examType ? { examType: input.examType } : {}),
-          },
-        });
-
-        // If no prevalences found for the exam type, calculate weighted average
-        if (topicPrevalences.length === 0 && input.examType) {
-          const allPrevalences = await ctx.db.topicPrevalence.findMany({
-            where: {
-              year: {
-                gte: input.startDate.getFullYear(),
-                lte: input.endDate.getFullYear(),
-              },
-            },
-          });
-
-          const prevalenceByTopic = allPrevalences.reduce(
-            (acc, tp) => {
-              const current = acc[tp.topic] ?? { sum: 0, totalCount: 0 };
-              return {
-                ...acc,
-                [tp.topic]: {
-                  sum: current.sum + tp.prevalence * tp.count,
-                  totalCount: current.totalCount + tp.count,
-                },
-              };
-            },
-            {} as Record<string, { sum: number; totalCount: number }>,
-          );
-
-          Object.entries(prevalenceByTopic).forEach(([topic, data]) => {
-            topicPrevalences.push({
-              id: "",
-              topic,
-              examType: input.examType!,
-              year: todaySP.getFullYear(),
-              count: data.totalCount,
-              prevalence: data.totalCount > 0 ? data.sum / data.totalCount : 0,
-              updatedAt: new Date(),
-            });
-          });
-        }
-
-        // Calculate average prevalence for each topic
-        const topicPrevalenceMap = topicPrevalences.reduce(
-          (acc, tp) => {
-            const current = acc[tp.topic] ?? { sum: 0, count: 0 };
-            return {
-              ...acc,
-              [tp.topic]: {
-                sum: current.sum + tp.prevalence,
-                count: current.count + 1,
-              },
-            };
-          },
-          {} as Record<string, { sum: number; count: number }>,
-        );
-
-        // Map interactions with their prevalences
-        return topicInteractions.map((ti) => {
-          const topicPrevalence = topicPrevalenceMap[ti.topic];
-          return {
-            topic: ti.topic,
-            accuracy: ti.accuracy || 0,
-            questionsCount: ti.questionsCount || 0,
-            correctCount: ti.correctCount || 0,
-            lastSeenAt: ti.lastSeenAt,
-            prevalence: topicPrevalence
-              ? topicPrevalence.sum / topicPrevalence.count
-              : 0,
-          };
-        });
-      } catch (error) {
-        console.error("Error in getUserTopicMetrics:", error);
-        throw error;
-      }
-    }),
-
   getTopicRankings: protectedProcedure.query(async ({ ctx }) => {
     // 1. Obter prevalências de todos os temas
     const topicPrevalences = await ctx.db.topicPrevalence.findMany();
@@ -287,70 +175,218 @@ export const playlistRouter = createTRPCRouter({
     }));
   }),
 
-  // Get daily question counts for the last 7 days
-  getUserDailyMetrics: protectedProcedure
+  getMetrics: protectedProcedure
     .input(
-      z.object({
-        startDate: z.date(),
-        endDate: z.date(),
-      }),
+      z.object({ period: z.enum(["week", "month", "last30days", "year"]) }),
     )
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-      const timeZone = "America/Sao_Paulo";
+      const now = new Date();
+      const startDate = new Date();
+      const endDate = new Date();
 
-      // Get all playlist items responded in the date range
-      const playlistItems = await ctx.db.playlistItem.findMany({
-        where: {
-          playlist: {
-            userId,
-          },
-          respondedAt: {
-            gte: input.startDate,
-            lte: input.endDate,
-          },
-        },
-        select: {
-          respondedAt: true,
-        },
-      });
-
-      // Initialize array with all days in the range
-      const dailyCounts: Array<{ date: string; count: number }> = [];
-      const currentDate = new Date(input.startDate);
-      while (currentDate <= input.endDate) {
-        const dateStr = currentDate
-          .toLocaleString("en-US", { timeZone })
-          .split(",")[0];
-        if (dateStr) {
-          dailyCounts.push({
-            date: dateStr,
-            count: 0,
-          });
-        }
-        currentDate.setDate(currentDate.getDate() + 1);
+      switch (input.period) {
+        case "week":
+          startDate.setDate(now.getDate() - now.getDay());
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setDate(startDate.getDate() + 6);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case "month":
+          startDate.setDate(1);
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case "last30days":
+          startDate.setDate(now.getDate() - 30);
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case "year":
+          startDate.setMonth(0, 1);
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setHours(23, 59, 59, 999);
+          break;
       }
 
-      // Count questions per day
-      playlistItems.forEach((item) => {
-        if (item.respondedAt) {
-          const itemDate = new Date(
-            item.respondedAt.toLocaleString("en-US", { timeZone }),
-          );
-          itemDate.setHours(0, 0, 0, 0);
-          const dateStr = itemDate
-            .toLocaleString("en-US", { timeZone })
-            .split(",")[0];
-          if (dateStr) {
-            const dayIndex = dailyCounts.findIndex((d) => d.date === dateStr);
-            if (dayIndex !== -1 && dailyCounts[dayIndex]) {
-              dailyCounts[dayIndex].count++;
-            }
-          }
-        }
+      // Get all playlist items for the user
+      const playlistItems = await ctx.db.playlistItem.findMany({
+        where: {
+          playlist: { userId },
+          respondedAt: { not: undefined },
+          selectedOptionId: { not: null },
+        },
+        include: {
+          question: {
+            include: {
+              options: true,
+            },
+          },
+        },
       });
 
-      return dailyCounts;
+      // Calculate total metrics
+      const totalAnswered = playlistItems.length;
+      const totalCorrect = playlistItems.filter((item) =>
+        item.question.options.some(
+          (o) => o.id === item.selectedOptionId && o.isCorrect,
+        ),
+      ).length;
+      const totalAccuracy =
+        totalAnswered > 0 ? totalCorrect / totalAnswered : 0;
+
+      // Calculate period metrics
+      const periodItems = playlistItems.filter(
+        (item) => item.respondedAt >= startDate && item.respondedAt <= endDate,
+      );
+      const periodAnswered = periodItems.length;
+      const periodCorrect = periodItems.filter((item) =>
+        item.question.options.some(
+          (o) => o.id === item.selectedOptionId && o.isCorrect,
+        ),
+      ).length;
+      const periodAccuracy =
+        periodAnswered > 0 ? periodCorrect / periodAnswered : 0;
+
+      // Calculate data for charts
+      const questionsByPeriod: Array<{ period: string; count: number }> = [];
+      const accuracyByPeriod: Array<{ period: string; accuracy: number }> = [];
+
+      if (input.period === "week") {
+        // Group by day of week
+        for (let i = 0; i < 7; i++) {
+          const dayStart = new Date(startDate);
+          dayStart.setDate(startDate.getDate() + i);
+          const dayEnd = new Date(dayStart);
+          dayEnd.setHours(23, 59, 59, 999);
+
+          const dayItems = periodItems.filter(
+            (item) =>
+              item.respondedAt >= dayStart && item.respondedAt <= dayEnd,
+          );
+          const dayCount = dayItems.length;
+          const dayCorrect = dayItems.filter((item) =>
+            item.question.options.some(
+              (o) => o.id === item.selectedOptionId && o.isCorrect,
+            ),
+          ).length;
+          const dayAccuracy = dayCount > 0 ? dayCorrect / dayCount : 0;
+
+          questionsByPeriod.push({
+            period: dayStart.toLocaleDateString("pt-BR", { weekday: "short" }),
+            count: dayCount,
+          });
+          accuracyByPeriod.push({
+            period: dayStart.toLocaleDateString("pt-BR", { weekday: "short" }),
+            accuracy: dayAccuracy,
+          });
+        }
+      } else if (input.period === "month") {
+        // Group by week
+        const weeks = Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000),
+        );
+        for (let i = 0; i < weeks; i++) {
+          const weekStart = new Date(startDate);
+          weekStart.setDate(startDate.getDate() + i * 7);
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          weekEnd.setHours(23, 59, 59, 999);
+
+          const weekItems = periodItems.filter(
+            (item) =>
+              item.respondedAt >= weekStart && item.respondedAt <= weekEnd,
+          );
+          const weekCount = weekItems.length;
+          const weekCorrect = weekItems.filter((item) =>
+            item.question.options.some(
+              (o) => o.id === item.selectedOptionId && o.isCorrect,
+            ),
+          ).length;
+          const weekAccuracy = weekCount > 0 ? weekCorrect / weekCount : 0;
+
+          questionsByPeriod.push({
+            period: `Semana ${i + 1}`,
+            count: weekCount,
+          });
+          accuracyByPeriod.push({
+            period: `Semana ${i + 1}`,
+            accuracy: weekAccuracy,
+          });
+        }
+      } else if (input.period === "year") {
+        // Group by month
+        for (let i = 0; i < 12; i++) {
+          const monthStart = new Date(now.getFullYear(), i, 1);
+          const monthEnd = new Date(now.getFullYear(), i + 1, 0);
+          monthEnd.setHours(23, 59, 59, 999);
+
+          const monthItems = periodItems.filter(
+            (item) =>
+              item.respondedAt >= monthStart && item.respondedAt <= monthEnd,
+          );
+          const monthCount = monthItems.length;
+          const monthCorrect = monthItems.filter((item) =>
+            item.question.options.some(
+              (o) => o.id === item.selectedOptionId && o.isCorrect,
+            ),
+          ).length;
+          const monthAccuracy = monthCount > 0 ? monthCorrect / monthCount : 0;
+
+          questionsByPeriod.push({
+            period: monthStart.toLocaleDateString("pt-BR", { month: "short" }),
+            count: monthCount,
+          });
+          accuracyByPeriod.push({
+            period: monthStart.toLocaleDateString("pt-BR", { month: "short" }),
+            accuracy: monthAccuracy,
+          });
+        }
+      } else if (input.period === "last30days") {
+        // Group by day
+        for (let i = 0; i < 30; i++) {
+          const dayStart = new Date(startDate);
+          dayStart.setDate(startDate.getDate() + i);
+          const dayEnd = new Date(dayStart);
+          dayEnd.setHours(23, 59, 59, 999);
+
+          const dayItems = periodItems.filter(
+            (item) =>
+              item.respondedAt >= dayStart && item.respondedAt <= dayEnd,
+          );
+          const dayCount = dayItems.length;
+          const dayCorrect = dayItems.filter((item) =>
+            item.question.options.some(
+              (o) => o.id === item.selectedOptionId && o.isCorrect,
+            ),
+          ).length;
+          const dayAccuracy = dayCount > 0 ? dayCorrect / dayCount : 0;
+
+          questionsByPeriod.push({
+            period: dayStart.toLocaleDateString("pt-BR", {
+              day: "numeric",
+              month: "short",
+            }),
+            count: dayCount,
+          });
+          accuracyByPeriod.push({
+            period: dayStart.toLocaleDateString("pt-BR", {
+              day: "numeric",
+              month: "short",
+            }),
+            accuracy: dayAccuracy,
+          });
+        }
+      }
+
+      return {
+        totalAnswered,
+        totalAccuracy,
+        periodAnswered,
+        periodAccuracy,
+        questionsByPeriod,
+        accuracyByPeriod,
+      };
     }),
 });
 

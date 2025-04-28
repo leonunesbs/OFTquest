@@ -137,13 +137,13 @@ model PlaylistMetric {
 }
 
 model PlaylistItem {
-    id               String   @id @default(cuid())
-    playlist         Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+    id               String    @id @default(cuid())
+    playlist         Playlist  @relation(fields: [playlistId], references: [id], onDelete: Cascade)
     playlistId       String
-    question         Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    question         Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
     questionId       String
     selectedOptionId String? // ID of the selected option
-    respondedAt      DateTime @default(now())
+    respondedAt      DateTime?
 }
 
 model UserFavorites {
