@@ -68,6 +68,10 @@ const cleanAttrs = (h: string): string =>
       const src = /src="[^"]+"/i.exec(attrs);
       return src ? `<img ${src[0]}>` : "<img>";
     }
+    if (tag.toLowerCase() === "iframe") {
+      // Preserve all iframe attributes
+      return `<iframe ${attrs}>`;
+    }
     return `<${tag.toLowerCase()}>`;
   });
 const tidy = (h: string) =>
@@ -85,7 +89,7 @@ async function ensureDir(dir: PathLike) {
   } catch {}
 }
 async function saveImage(relPath: string, originalUrl: string | URL | Request) {
-  const dest = path.join(process.cwd(), relPath);
+  const dest = path.join(process.cwd(), "public", relPath);
   await ensureDir(path.dirname(dest));
   const res = await fetchWithTimeout(originalUrl);
   if (!res.ok) {
@@ -175,10 +179,16 @@ function parse(html: string, task: Task): ParseResult {
 
   //──────── enunciado
   const stmtBlock = find(html, /<div class="enunciado">([\s\S]*?)<\/div>/i);
-  const statement = strip(stmtBlock);
+  const statement = stmtBlock.replace(/<img[^>]*>/gi, ""); // Remove img tags
   const enunImgs = all(stmtBlock, /<img[^>]+src="([^"]+)"/gi)
     .map((m) => (m[1] ? convertSrc(m[1], task) : null))
     .filter((img): img is NonNullable<typeof img> => img !== null);
+
+  // Handle YouTube iframes in statement
+  const statementWithIframes = statement.replace(
+    /<iframe[^>]*src="[^"]*youtube[^"]*"[^>]*>.*?<\/iframe>/gi,
+    (iframe) => `<div data-youtube-video>${iframe}</div>`,
+  );
 
   //──────── opções (inclui imagens das opções)
   const optionImgsAll: ImageInfo[] = [];
@@ -192,8 +202,14 @@ function parse(html: string, task: Task): ParseResult {
           .filter((img): img is NonNullable<typeof img> => img !== null)
       : [];
     optionImgsAll.push(...optImgs);
+
+    // Extract the text content after the span and remove img tags
+    const textContent = li[1]
+      ? (li[1].split("</span>")[1] ?? "").replace(/<img[^>]*>/gi, "")
+      : "";
+
     return {
-      text: li[1] ? strip(li[1].split("</span>")[1] ?? "") : "",
+      text: textContent, // Keep HTML content
       images: optImgs.map((o) => o.rel),
       isCorrect: li[1] ? li[1].includes("checked") : false,
     };
@@ -205,6 +221,13 @@ function parse(html: string, task: Task): ParseResult {
     /<div class="comentario">[\s\S]*?<div class="texto">([\s\S]*?)<\/div>/i,
   );
   expl = tidy(cleanAttrs(expl)).replace(/\\/g, "");
+
+  // Handle YouTube iframes
+  expl = expl.replace(
+    /<iframe[^>]*src="[^"]*youtube[^"]*"[^>]*>.*?<\/iframe>/gi,
+    (iframe) => `<div data-youtube-video>${iframe}</div>`,
+  );
+
   const explImgs: ImageInfo[] = [];
   expl = expl.replace(
     /<img[^>]+src="([^"]+)"/gi,
@@ -221,7 +244,7 @@ function parse(html: string, task: Task): ParseResult {
       type: task.typeSlug,
       number: task.num,
       topic,
-      statement,
+      statement: statementWithIframes,
       options,
       explanation: expl,
       images: enunImgs.map((o) => o.rel), // Only statement images
@@ -251,9 +274,9 @@ async function fetchHtml(
 // Fix the scrapeYear function
 async function scrapeYear(year: number, cookie: string): Promise<Question[]> {
   const examInfo: [string, string][] = [
+    ["TP", "teorico-pratica"],
     ["T1", "teorica-1"],
     ["T2", "teorica-2"],
-    ["TP", "teorico-pratica"],
   ];
 
   console.log("\n" + clr.cyan(`${sym.start} Ano ${year} — início`));
@@ -261,7 +284,13 @@ async function scrapeYear(year: number, cookie: string): Promise<Question[]> {
   const results: Question[] = [];
 
   for (const [examCode, typeSlug] of examInfo) {
-    const examDir = path.join(process.cwd(), "json", String(year), examCode);
+    const examDir = path.join(
+      process.cwd(),
+      "public",
+      "json",
+      String(year),
+      examCode,
+    );
     await ensureDir(examDir);
 
     console.log(clr.cyan(`${sym.start} ${year} ${examCode} — Q1 em diante`));
@@ -352,7 +381,7 @@ async function scrapeYear(year: number, cookie: string): Promise<Question[]> {
 
   /* salva JSON consolidado POR ANO */
   {
-    const yearDir = path.join(process.cwd(), "json", String(year));
+    const yearDir = path.join(process.cwd(), "public", "json", String(year));
     await ensureDir(yearDir);
     const file = path.join(yearDir, "questions.json");
     await fs.writeFile(file, JSON.stringify(results, null, 2));
@@ -371,7 +400,7 @@ void (async () => {
     const cookie = await login();
     const all: Question[] = [];
     const years = Array.from({ length: 2025 - 2006 + 1 }, (_, i) => 2006 + i);
-    const PAR_YEARS = 5; // anos simultâneos
+    const PAR_YEARS = 25; // anos simultâneos
 
     for (let i = 0; i < years.length; i += PAR_YEARS) {
       const batch = years.slice(i, i + PAR_YEARS);
@@ -381,7 +410,7 @@ void (async () => {
       all.push(...results.flat());
     }
 
-    const file = path.join(process.cwd(), "questions.json");
+    const file = path.join(process.cwd(), "public", "questions.json");
     await fs.writeFile(file, JSON.stringify(all, null, 2));
     console.log(
       clr.green(
