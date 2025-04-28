@@ -3,7 +3,7 @@
 
 import { TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import TopicRanking from "./TopicRanking";
 import {
@@ -32,34 +31,49 @@ const dailyChartConfig = {
 
 type TimeRange = "week" | "month" | "30days" | "year";
 
-export default function DashboardClient() {
+interface DateRange {
+  startDate: Date;
+  endDate: Date;
+}
+
+interface TopicMetric {
+  topic: string;
+  accuracy: number;
+  questionsCount: number;
+  correctCount: number;
+  lastSeenAt: Date;
+  prevalence: number;
+}
+
+interface DailyMetric {
+  date: string;
+  count: number;
+}
+
+interface DashboardClientProps {
+  initialTopicMetrics: TopicMetric[];
+  initialDailyMetrics: DailyMetric[];
+}
+
+export default function DashboardClient({
+  initialTopicMetrics,
+  initialDailyMetrics,
+}: DashboardClientProps) {
   // **1. Hooks no topo**
   const [timeRange, setTimeRange] = useState<TimeRange>("week");
-  const { data, isLoading } = api.playlist.getUserTopicMetrics.useQuery({
-    period: timeRange,
-  });
-  const { data: dailyData } = api.playlist.getUserDailyMetrics.useQuery(
-    undefined,
-    {
-      refetchInterval: 30000, // Refresh every 30 seconds
-    },
-  );
-
-  // Debug logs
-
-  const metrics = useMemo(() => {
-    return data ?? [];
-  }, [data]);
-
-  // Add daily data processing
-  const dailyChartData = useMemo(() => {
-    if (!dailyData) return [];
-    const timeZone = "America/Sao_Paulo";
+  const timeZone = "America/Sao_Paulo";
+  const todaySP = useMemo(() => {
     const today = new Date();
-    const todaySP = new Date(today.toLocaleString("en-US", { timeZone }));
-    todaySP.setHours(0, 0, 0, 0);
+    const date = new Date(today.toLocaleString("en-US", { timeZone }));
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, [timeZone]);
 
+  const dateRange = useMemo<DateRange>(() => {
     let startDate: Date;
+    const endDate = new Date(todaySP);
+    endDate.setHours(23, 59, 59, 999);
+
     switch (timeRange) {
       case "week":
         // Get the last Sunday
@@ -82,23 +96,129 @@ export default function DashboardClient() {
         break;
     }
 
-    return dailyData
-      .filter((day) => {
-        const date = new Date(day.date ?? new Date());
-        const dateSP = new Date(date.toLocaleString("en-US", { timeZone }));
-        dateSP.setHours(0, 0, 0, 0);
-        return dateSP >= startDate;
-      })
-      .map((day) => {
-        const date = new Date(day.date ?? new Date());
-        return {
-          date: date.toLocaleDateString("pt-BR", {
+    console.log("Date Range:", {
+      timeRange,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    });
+
+    return { startDate, endDate };
+  }, [timeRange, todaySP]);
+
+  const { data } = api.playlist.getUserTopicMetrics.useQuery(
+    {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    },
+    {
+      initialData: initialTopicMetrics,
+    },
+  );
+
+  const { data: dailyData } = api.playlist.getUserDailyMetrics.useQuery(
+    {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    },
+    {
+      initialData: initialDailyMetrics,
+      refetchInterval: 30000, // Refresh every 30 seconds
+    },
+  );
+
+  // Debug logs
+
+  const metrics = useMemo(() => {
+    return data ?? [];
+  }, [data]);
+
+  // Add daily data processing
+  const dailyChartData = useMemo(() => {
+    if (!dailyData) return [];
+    const timeZone = "America/Sao_Paulo";
+    const today = new Date();
+    const todaySP = new Date(today.toLocaleString("en-US", { timeZone }));
+    todaySP.setHours(0, 0, 0, 0);
+
+    // Group data based on timeRange
+    const groupedData = new Map<string, number>();
+
+    // Initialize all days/months with zero
+    if (timeRange === "week") {
+      // Initialize all days of the week
+      const weekStart = new Date(todaySP);
+      weekStart.setDate(todaySP.getDate() - todaySP.getDay());
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + i);
+        const key = date.toLocaleDateString("pt-BR", {
+          weekday: "short",
+          timeZone,
+        });
+        groupedData.set(key, 0);
+      }
+    } else if (timeRange === "year") {
+      // Initialize all months of the year
+      for (let i = 0; i <= todaySP.getMonth(); i++) {
+        const date = new Date(todaySP.getFullYear(), i, 1);
+        const key = date.toLocaleDateString("pt-BR", {
+          month: "short",
+          year: "2-digit",
+          timeZone,
+        });
+        groupedData.set(key, 0);
+      }
+    }
+
+    // Add actual data
+    dailyData.forEach((day) => {
+      const date = new Date(day.date);
+      const dateSP = new Date(date.toLocaleString("en-US", { timeZone }));
+      let key: string;
+
+      switch (timeRange) {
+        case "week":
+          // Group by day of week
+          key = dateSP.toLocaleDateString("pt-BR", {
             weekday: "short",
             timeZone,
-          }),
-          count: day.count,
-        };
-      });
+          });
+          break;
+        case "month":
+        case "30days":
+          // Group by week
+          const weekStart = new Date(dateSP);
+          weekStart.setDate(dateSP.getDate() - dateSP.getDay());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          key = `Sem ${weekStart.toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            timeZone,
+          })} - ${weekEnd.toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            timeZone,
+          })}`;
+          break;
+        case "year":
+          // Group by month
+          key = dateSP.toLocaleDateString("pt-BR", {
+            month: "short",
+            year: "2-digit",
+            timeZone,
+          });
+          break;
+      }
+
+      groupedData.set(key, (groupedData.get(key) ?? 0) + day.count);
+    });
+
+    // Convert to array and sort by date
+    return Array.from(groupedData.entries()).map(([date, count]) => ({
+      date,
+      count,
+    }));
   }, [dailyData, timeRange]);
 
   const totals = useMemo(() => {
@@ -152,19 +272,6 @@ export default function DashboardClient() {
   }, [dailyData, timeRange]);
 
   // **3. Early returns (após hooks)**
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-1/3" />
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <Skeleton className="h-64" />
-          <Skeleton className="h-64" />
-          <Skeleton className="h-64" />
-        </div>
-      </div>
-    );
-  }
-
   if (metrics.length === 0) {
     return (
       <Card>
@@ -278,7 +385,9 @@ export default function DashboardClient() {
                   cursor={false}
                   content={<ChartTooltipContent hideLabel />}
                 />
-                <Bar dataKey="count" fill="hsl(var(--chart-1))" radius={8} />
+                <Bar dataKey="count" fill="hsl(var(--chart-1))" radius={8}>
+                  <LabelList position="top" offset={12} fontSize={12} />
+                </Bar>
               </BarChart>
             </ChartContainer>
           ) : (
