@@ -93,7 +93,7 @@ export default async function Home() {
             <Badge variant="secondary" className="mb-2">
               Novo
             </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
+            <h1 className="text-4xl font-black tracking-tight sm:text-6xl">
               <span className="text-muted-foreground">OFT</span>
               <span className="text-foreground">.quest</span>
             </h1>
