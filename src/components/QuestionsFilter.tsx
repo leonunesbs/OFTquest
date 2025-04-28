@@ -2,8 +2,7 @@
 "use client";
 
 import { Search, X } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -19,61 +18,54 @@ interface QuestionsFilterProps {
   topics: string[];
   years: number[];
   types: string[];
-  currentFilters: {
-    search?: string;
-    topic?: string;
-    year?: number;
-    type?: string;
-  };
 }
 
 export default function QuestionsFilter({
   topics,
   years,
   types,
-  currentFilters,
 }: QuestionsFilterProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Estado local para os filtros
-  const [search, setSearch] = useState(currentFilters.search ?? "");
-  const [topic, setTopic] = useState(currentFilters.topic ?? "");
-  const [year, setYear] = useState(currentFilters.year?.toString() ?? "");
-  const [type, setType] = useState(currentFilters.type ?? "");
+  // Get current values from URL
+  const search = searchParams.get("search") ?? "";
+  const topic = searchParams.get("topic") ?? "";
+  const year = searchParams.get("year") ?? "";
+  const type = searchParams.get("type") ?? "";
 
-  // Atualizar a URL com os filtros
-  const updateFilters = () => {
-    const params = new URLSearchParams();
+  // Update URL with filters
+  const updateFilters = (
+    newSearch: string,
+    newTopic: string,
+    newYear: string,
+    newType: string,
+  ) => {
+    const params = new URLSearchParams(searchParams.toString());
 
-    if (search) params.set("search", search);
-    if (topic) params.set("topic", topic);
-    if (year) params.set("year", year);
-    if (type) params.set("type", type);
+    if (newSearch) params.set("search", newSearch);
+    else params.delete("search");
 
-    // Resetar para a página 1 quando os filtros mudam
+    if (newTopic) params.set("topic", newTopic);
+    else params.delete("topic");
+
+    if (newYear) params.set("year", newYear);
+    else params.delete("year");
+
+    if (newType) params.set("type", newType);
+    else params.delete("type");
+
+    // Reset to page 1 when filters change
     params.set("page", "1");
 
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // Limpar todos os filtros
+  // Clear all filters
   const clearFilters = () => {
-    setSearch("");
-    setTopic("");
-    setYear("");
-    setType("");
-
     router.push(pathname);
   };
-
-  // Sincronizar estado local com os filtros da URL ao montar o componente
-  useEffect(() => {
-    setSearch(currentFilters.search ?? "");
-    setTopic(currentFilters.topic ?? "");
-    setYear(currentFilters.year?.toString() ?? "");
-    setType(currentFilters.type ?? "");
-  }, [currentFilters]);
 
   return (
     <div className="space-y-4">
@@ -82,18 +74,23 @@ export default function QuestionsFilter({
           <Input
             placeholder="Buscar questões..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && updateFilters()}
+            onChange={(e) => updateFilters(e.target.value, topic, year, type)}
+            onKeyDown={(e) =>
+              e.key === "Enter" && updateFilters(search, topic, year, type)
+            }
           />
           <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
         </div>
 
-        <Select value={topic} onValueChange={setTopic}>
+        <Select
+          value={topic}
+          onValueChange={(value) => updateFilters(search, value, year, type)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Filtrar por tema" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={"0"}>Todos os temas</SelectItem>
+            <SelectItem value="">Todos os temas</SelectItem>
             {topics.map((t) => (
               <SelectItem key={t} value={t}>
                 {t}
@@ -102,12 +99,15 @@ export default function QuestionsFilter({
           </SelectContent>
         </Select>
 
-        <Select value={year} onValueChange={setYear}>
+        <Select
+          value={year}
+          onValueChange={(value) => updateFilters(search, topic, value, type)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Filtrar por ano" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="0">Todos os anos</SelectItem>
+            <SelectItem value="">Todos os anos</SelectItem>
             {years.map((y) => (
               <SelectItem key={y} value={y.toString()}>
                 {y}
@@ -116,12 +116,15 @@ export default function QuestionsFilter({
           </SelectContent>
         </Select>
 
-        <Select value={type} onValueChange={setType}>
+        <Select
+          value={type}
+          onValueChange={(value) => updateFilters(search, topic, year, value)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Filtrar por tipo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="0">Todos os tipos</SelectItem>
+            <SelectItem value="">Todos os tipos</SelectItem>
             {types.map((t) => (
               <SelectItem key={t} value={t}>
                 {t === "teorica-1"
@@ -139,7 +142,7 @@ export default function QuestionsFilter({
         <Button variant="outline" onClick={clearFilters}>
           <X className="mr-2 h-4 w-4" /> Limpar Filtros
         </Button>
-        <Button onClick={updateFilters}>
+        <Button onClick={() => updateFilters(search, topic, year, type)}>
           <Search className="mr-2 h-4 w-4" /> Aplicar Filtros
         </Button>
       </div>
