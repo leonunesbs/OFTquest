@@ -7,61 +7,14 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 
-import { loadStripe } from "@stripe/stripe-js";
 import { Check } from "lucide-react";
 import { type Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { CheckoutButton } from "~/components/CheckoutButton";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/server/auth";
 import { HydrateClient } from "~/trpc/server";
-
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
-);
-
-interface CheckoutResponse {
-  sessionId: string;
-}
-
-async function createCheckoutSession() {
-  "use server";
-
-  const session = await auth();
-  if (!session?.user) {
-    redirect(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth/signin`);
-  }
-
-  try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/create-checkout-session`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    const data = (await response.json()) as CheckoutResponse;
-    const stripe = await stripePromise;
-
-    if (!stripe) throw new Error("Stripe failed to initialize");
-
-    const { error } = await stripe.redirectToCheckout({
-      sessionId: data.sessionId,
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
-  } catch (error) {
-    console.error("Error:", error);
-    throw error;
-  }
-}
 
 export const metadata: Metadata = {
   keywords: [
