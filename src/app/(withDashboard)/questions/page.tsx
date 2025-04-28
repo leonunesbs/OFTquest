@@ -156,28 +156,25 @@ export default async function QuestionsPage({
         </p>
       </div>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Questão Aleatória</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <HydrateClient>
-            <QuestionInteractive question={randomQuestion!} />
-          </HydrateClient>
-        </CardContent>
-      </Card>
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <HydrateClient>
-            <QuestionsFilter topics={topics} years={years} types={types} />
-          </HydrateClient>
-        </CardContent>
-      </Card>
       <HydrateClient>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Questão Aleatória</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QuestionInteractive question={randomQuestion!} />
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Filtros</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QuestionsFilter topics={topics} years={years} types={types} />
+          </CardContent>
+        </Card>
+
         <QuestionsTable
           questions={questions}
           currentPage={filters.page}
