@@ -5,30 +5,41 @@ import QuestionsTable from "~/components/QuestionsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/server/db";
 
-// Função para obter os parâmetros de busca da URL
-function getSearchParams(
-  searchParams: Record<string, string | string[] | undefined>,
-) {
-  const page = searchParams.page ? Number(searchParams.page) : 1;
-  const limit = searchParams.limit ? Number(searchParams.limit) : 10;
-  const search = searchParams.search?.toString() ?? "";
-  const topic = searchParams.topic?.toString() ?? "";
-  const year = searchParams.year ? Number(searchParams.year) : undefined;
-  const type = searchParams.type?.toString() ?? "";
+type SearchParams = {
+  page?: string | string[];
+  limit?: string | string[];
+  search?: string | string[];
+  topic?: string | string[];
+  year?: string | string[];
+  type?: string | string[];
+};
 
-  return { page, limit, search, topic, year, type };
+type FilterParams = {
+  page: number;
+  limit: number;
+  search: string;
+  topic: string;
+  year?: number;
+  type: string;
+};
+
+function parseSearchParams(searchParams: SearchParams): FilterParams {
+  return {
+    page: searchParams.page ? Number(searchParams.page) : 1,
+    limit: searchParams.limit ? Number(searchParams.limit) : 10,
+    search: searchParams.search?.toString() ?? "",
+    topic: searchParams.topic?.toString() ?? "",
+    year: searchParams.year ? Number(searchParams.year) : undefined,
+    type: searchParams.type?.toString() ?? "",
+  };
 }
 
-export default async function QuestionsPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const { page, limit, search, topic, year, type } = getSearchParams(
-    await searchParams,
-  );
-
-  // Construir a query com os filtros
+function buildWhereClause({
+  search,
+  topic,
+  year,
+  type,
+}: Omit<FilterParams, "page" | "limit">): Prisma.QuestionWhereInput {
   const where: Prisma.QuestionWhereInput = {};
 
   if (search) {
@@ -51,49 +62,63 @@ export default async function QuestionsPage({
     where.type = type;
   }
 
-  // Buscar questões com ordenação por ano, tipo e número
-  const questions = await db.question.findMany({
-    where,
-    orderBy: [{ year: "desc" }, { type: "asc" }, { number: "asc" }],
-    skip: (page - 1) * limit,
-    take: limit,
-    include: {
-      options: {
-        select: {
-          isCorrect: true,
+  return where;
+}
+
+async function fetchQuestionsData(
+  where: Prisma.QuestionWhereInput,
+  page: number,
+  limit: number,
+) {
+  const [questions, totalQuestions] = await Promise.all([
+    db.question.findMany({
+      where,
+      orderBy: [{ year: "desc" }, { type: "asc" }, { number: "asc" }],
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        options: {
+          select: {
+            isCorrect: true,
+          },
         },
+        topics: true,
       },
-      topics: true,
-    },
-  });
+    }),
+    db.question.count({ where }),
+  ]);
 
-  // Contar o total de questões para paginação
-  const totalQuestions = await db.question.count({ where });
-  const totalPages = Math.ceil(totalQuestions / limit);
+  return {
+    questions,
+    totalQuestions,
+    totalPages: Math.ceil(totalQuestions / limit),
+  };
+}
 
-  // Buscar temas para o filtro
-  const topics = await db.topic
-    .findMany({
-      select: { name: true },
-    })
-    .then((topics) => topics.map((t) => t.name));
+async function fetchFilterOptions() {
+  const [topics, years, types] = await Promise.all([
+    db.topic
+      .findMany({
+        select: { name: true },
+      })
+      .then((topics) => topics.map((t) => t.name)),
+    db.question
+      .groupBy({
+        by: ["year"],
+      })
+      .then((years) => years.map((y) => y.year).sort((a, b) => b - a)),
+    db.question
+      .groupBy({
+        by: ["type"],
+      })
+      .then((types) => types.map((t) => t.type)),
+  ]);
 
-  // Buscar anos para o filtro
-  const years = await db.question
-    .groupBy({
-      by: ["year"],
-    })
-    .then((years) => years.map((y) => y.year).sort((a, b) => b - a));
+  return { topics, years, types };
+}
 
-  // Buscar tipos para o filtro
-  const types = await db.question
-    .groupBy({
-      by: ["type"],
-    })
-    .then((types) => types.map((t) => t.type));
-
-  // Buscar uma questão aleatória
-  const randomQuestion = await db.question.findFirst({
+async function fetchRandomQuestion(totalQuestions: number) {
+  return db.question.findFirst({
     where: {},
     orderBy: {
       id: "asc",
@@ -104,6 +129,22 @@ export default async function QuestionsPage({
       topics: true,
     },
   });
+}
+
+export default async function QuestionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const filters = parseSearchParams(await searchParams);
+  const where = buildWhereClause(filters);
+
+  const [{ questions, totalPages }, { topics, years, types }, randomQuestion] =
+    await Promise.all([
+      fetchQuestionsData(where, filters.page, filters.limit),
+      fetchFilterOptions(),
+      fetchRandomQuestion(await db.question.count({ where })),
+    ]);
 
   return (
     <div className="container mx-auto">
@@ -136,9 +177,9 @@ export default async function QuestionsPage({
 
       <QuestionsTable
         questions={questions}
-        currentPage={page}
+        currentPage={filters.page}
         totalPages={totalPages}
-        currentFilters={{ search, topic, year, type, limit }}
+        currentFilters={filters}
       />
     </div>
   );
