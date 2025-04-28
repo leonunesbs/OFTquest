@@ -105,8 +105,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <GalleryVerticalEnd className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Documentation</span>
-                  <span className="">v1.0.0</span>
+                  <span className="font-semibold text-muted-foreground">
+                    OFT<span className="text-bold text-primary">.quest</span>
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>
