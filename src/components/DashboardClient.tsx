@@ -26,6 +26,8 @@ import {
 import { TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { useToast } from "~/hooks/use-toast";
 import { Button } from "./ui/button";
 
 type Period = "week" | "month" | "last30days" | "year";
@@ -37,6 +39,11 @@ interface MetricsData {
   periodAccuracy: number;
   questionsByPeriod: Array<{ period: string; count: number }>;
   accuracyByPeriod: Array<{ period: string; accuracy: number }>;
+}
+
+interface DashboardClientProps {
+  metrics: MetricsData;
+  success?: boolean;
 }
 
 const periodOptions: { value: Period; label: string }[] = [
@@ -59,9 +66,23 @@ const accuracyChartConfig = {
   },
 } as const;
 
-export default function DashboardClient({ metrics }: { metrics: MetricsData }) {
+export default function DashboardClient({
+  metrics,
+  success,
+}: DashboardClientProps) {
   const searchParams = useSearchParams();
   const period = (searchParams.get("period") as Period) ?? "week";
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (success) {
+      toast({
+        title: "Assinatura Premium Ativada!",
+        description: "Agora você tem acesso a todos os recursos premium.",
+        duration: 5000,
+      });
+    }
+  }, [success, toast]);
 
   return (
     <div className="space-y-4 sm:space-y-6">

@@ -7,6 +7,7 @@ import {
 import { HydrateClient, api } from "~/trpc/server";
 
 import DashboardClient from "~/components/DashboardClient";
+import { Toaster } from "~/components/ui/toaster";
 
 type Period = "week" | "month" | "last30days" | "year";
 
@@ -17,6 +18,8 @@ export default async function DashboardPage({
 }) {
   const period = ((await searchParams).period as Period) ?? "week";
   const metrics = await api.playlist.getMetrics({ period });
+  const success = (await searchParams).success === "true";
+  const sessionId = (await searchParams).session_id as string | undefined;
 
   return (
     <div>
@@ -29,7 +32,11 @@ export default async function DashboardPage({
         </CardHeader>
       </Card>
       <HydrateClient>
-        <DashboardClient metrics={metrics} />
+        <DashboardClient
+          metrics={metrics}
+          success={success && sessionId ? success : false}
+        />
+        <Toaster />
       </HydrateClient>
     </div>
   );
