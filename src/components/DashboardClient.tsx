@@ -1,78 +1,49 @@
 // src/app/(withAuth)/dashboard/DashboardClient.tsx
 "use client";
 
+import { TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import TopicRanking from "./TopicRanking";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "./ui/chart";
 
-const COLORS = [
-  "#0088FE",
-  "#00C49F",
-  "#FFBB28",
-  "#FF8042",
-  "#8884D8",
-  "#82CA9D",
-];
+const dailyChartConfig = {
+  count: {
+    label: "Questões",
+    color: "hsl(var(--chart-1))",
+  },
+} satisfies ChartConfig;
 
-function ChartCard({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className="mb-6 w-full">
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="h-[400px]">{children}</CardContent>
-    </Card>
-  );
-}
+type TimeRange = "week" | "month" | "30days" | "year";
 
 export default function DashboardClient() {
   // **1. Hooks no topo**
-  const [activeTab, setActiveTab] = useState<
-    "accuracy" | "prevalence" | "activity"
-  >("accuracy");
-  const [period, setPeriod] = useState<"1A" | "2A" | "3A" | "5A">("5A");
+  const [timeRange, setTimeRange] = useState<TimeRange>("week");
   const { data, isLoading } = api.playlist.getUserTopicMetrics.useQuery({
-    period,
+    period: timeRange,
   });
+  const { data: dailyData } = api.playlist.getUserDailyMetrics.useQuery(
+    undefined,
+    {
+      refetchInterval: 30000, // Refresh every 30 seconds
+    },
+  );
 
   // Debug logs
 
@@ -80,33 +51,105 @@ export default function DashboardClient() {
     return data ?? [];
   }, [data]);
 
-  // **2. useMemo sempre chamado**
-  const accuracyData = useMemo(() => {
-    const filtered = metrics
-      .filter((m) => m.questionsCount > 0)
-      .map((m) => ({ topic: m.topic, value: Math.round(m.accuracy * 100) }))
-      .sort((a, b) => a.value - b.value);
-    return filtered;
-  }, [metrics]);
+  // Add daily data processing
+  const dailyChartData = useMemo(() => {
+    if (!dailyData) return [];
+    const timeZone = "America/Sao_Paulo";
+    const today = new Date();
+    const todaySP = new Date(today.toLocaleString("en-US", { timeZone }));
+    todaySP.setHours(0, 0, 0, 0);
 
-  const prevalenceData = useMemo(() => {
-    const filtered = metrics
-      .map((m) => ({ topic: m.topic, value: Math.round(m.prevalence * 100) }))
-      .sort((a, b) => b.value - a.value);
-    return filtered;
-  }, [metrics]);
+    let startDate: Date;
+    switch (timeRange) {
+      case "week":
+        // Get the last Sunday
+        startDate = new Date(todaySP);
+        const dayOfWeek = todaySP.getDay();
+        startDate.setDate(todaySP.getDate() - dayOfWeek);
+        break;
+      case "month":
+        // First day of current month
+        startDate = new Date(todaySP.getFullYear(), todaySP.getMonth(), 1);
+        break;
+      case "30days":
+        // 30 days ago
+        startDate = new Date(todaySP);
+        startDate.setDate(todaySP.getDate() - 30);
+        break;
+      case "year":
+        // First day of current year
+        startDate = new Date(todaySP.getFullYear(), 0, 1);
+        break;
+    }
 
-  const activityData = useMemo(() => {
-    const filtered = metrics
-      .filter((m) => m.questionsCount > 0)
-      .map((m) => ({
-        topic: m.topic,
-        responded: m.questionsCount,
-        correct: m.correctCount,
-      }))
-      .sort((a, b) => b.responded - a.responded);
-    return filtered;
-  }, [metrics]);
+    return dailyData
+      .filter((day) => {
+        const date = new Date(day.date ?? new Date());
+        const dateSP = new Date(date.toLocaleString("en-US", { timeZone }));
+        dateSP.setHours(0, 0, 0, 0);
+        return dateSP >= startDate;
+      })
+      .map((day) => {
+        const date = new Date(day.date ?? new Date());
+        return {
+          date: date.toLocaleDateString("pt-BR", {
+            weekday: "short",
+            timeZone,
+          }),
+          count: day.count,
+        };
+      });
+  }, [dailyData, timeRange]);
+
+  const totals = useMemo(() => {
+    if (!dailyData) return { today: 0, week: 0 };
+    const timeZone = "America/Sao_Paulo";
+    const today = new Date();
+    const todaySP = new Date(today.toLocaleString("en-US", { timeZone }));
+    todaySP.setHours(0, 0, 0, 0);
+
+    let startDate: Date;
+    switch (timeRange) {
+      case "week":
+        // Get the last Sunday
+        startDate = new Date(todaySP);
+        const dayOfWeek = todaySP.getDay();
+        startDate.setDate(todaySP.getDate() - dayOfWeek);
+        break;
+      case "month":
+        // First day of current month
+        startDate = new Date(todaySP.getFullYear(), todaySP.getMonth(), 1);
+        break;
+      case "30days":
+        // 30 days ago
+        startDate = new Date(todaySP);
+        startDate.setDate(todaySP.getDate() - 30);
+        break;
+      case "year":
+        // First day of current year
+        startDate = new Date(todaySP.getFullYear(), 0, 1);
+        break;
+    }
+
+    // Find today's count in dailyData
+    const todayCount =
+      dailyData.find((day) => {
+        const date = new Date(day.date ?? new Date());
+        const dateSP = new Date(date.toLocaleString("en-US", { timeZone }));
+        dateSP.setHours(0, 0, 0, 0);
+        return dateSP.getTime() === todaySP.getTime();
+      })?.count ?? 0;
+
+    // Calculate total for the selected period
+    const periodTotal = dailyData.reduce((sum, day) => {
+      const date = new Date(day.date ?? new Date());
+      const dateSP = new Date(date.toLocaleString("en-US", { timeZone }));
+      dateSP.setHours(0, 0, 0, 0);
+      return dateSP >= startDate ? sum + day.count : sum;
+    }, 0);
+
+    return { today: todayCount, week: periodTotal };
+  }, [dailyData, timeRange]);
 
   // **3. Early returns (após hooks)**
   if (isLoading) {
@@ -135,175 +178,138 @@ export default function DashboardClient() {
     );
   }
 
-  // **4. Renderização dos gráficos em tabs**
+  // **4. Renderização dos gráficos**
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) =>
-            setActiveTab(v as "accuracy" | "prevalence" | "activity")
-          }
-          defaultValue="accuracy"
-        >
-          <TabsList className="grid grid-cols-3 gap-2">
-            <TabsTrigger value="accuracy">Taxa de Acertos</TabsTrigger>
-            <TabsTrigger value="prevalence">Prevalência</TabsTrigger>
-            <TabsTrigger value="activity">Atividade</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <Select
-          value={period}
-          onValueChange={(v) => setPeriod(v as "1A" | "2A" | "3A" | "5A")}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Período" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1A">Último ano</SelectItem>
-            <SelectItem value="2A">Últimos 2 anos</SelectItem>
-            <SelectItem value="3A">Últimos 3 anos</SelectItem>
-            <SelectItem value="5A">Últimos 5 anos</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Button
+            variant={timeRange === "week" ? "default" : "outline"}
+            onClick={() => setTimeRange("week")}
+          >
+            Semana
+          </Button>
+          <Button
+            variant={timeRange === "month" ? "default" : "outline"}
+            onClick={() => setTimeRange("month")}
+          >
+            Mês
+          </Button>
+          <Button
+            variant={timeRange === "30days" ? "default" : "outline"}
+            onClick={() => setTimeRange("30days")}
+          >
+            30 Dias
+          </Button>
+          <Button
+            variant={timeRange === "year" ? "default" : "outline"}
+            onClick={() => setTimeRange("year")}
+          >
+            Ano
+          </Button>
+        </div>
       </div>
 
-      <Tabs value={activeTab}>
-        <TabsContent value="accuracy">
-          <ChartCard
-            title="Taxa de Acertos por Tema"
-            description="Seu desempenho percentual em cada tema."
-          >
-            {accuracyData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={accuracyData}
-                  layout="vertical"
-                  margin={{ top: 20, right: 30, left: 80, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" domain={[0, 100]} unit="%" />
-                  <YAxis
-                    dataKey="topic"
-                    type="category"
-                    width={120}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip
-                    formatter={(val: number) => `${val}%`}
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #ccc",
-                      borderRadius: "4px",
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="value" name="Acertos (%)" fill={COLORS[0]}>
-                    {accuracyData.map((_, idx) => (
-                      <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-muted-foreground">
-                  Nenhum dado disponível para exibição
-                </p>
-              </div>
-            )}
-          </ChartCard>
-        </TabsContent>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Questões Hoje</CardTitle>
+            <CardDescription>
+              Total de questões respondidas hoje
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{totals.today}</div>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="prevalence">
-          <ChartCard
-            title="Prevalência de Temas"
-            description="Percentual de ocorrência dos temas nas provas."
-          >
-            {prevalenceData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={prevalenceData}
-                    dataKey="value"
-                    nameKey="topic"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={120}
-                    label={({ name, value }) => `${name}: ${value}%`}
-                  >
-                    {prevalenceData.map((_, idx) => (
-                      <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(val: number) => `${val}%`}
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #ccc",
-                      borderRadius: "4px",
-                    }}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-muted-foreground">
-                  Nenhum dado disponível para exibição
-                </p>
-              </div>
-            )}
-          </ChartCard>
-        </TabsContent>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {timeRange === "week"
+                ? "Questões na Semana"
+                : timeRange === "month"
+                  ? "Questões no Mês"
+                  : timeRange === "30days"
+                    ? "Questões nos Últimos 30 Dias"
+                    : "Questões no Ano"}
+            </CardTitle>
+            <CardDescription>
+              {timeRange === "week"
+                ? "Total de questões respondidas na última semana"
+                : timeRange === "month"
+                  ? "Total de questões respondidas no mês atual"
+                  : timeRange === "30days"
+                    ? "Total de questões respondidas nos últimos 30 dias"
+                    : "Total de questões respondidas no ano atual"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{totals.week}</div>
+          </CardContent>
+        </Card>
+      </div>
 
-        <TabsContent value="activity">
-          <ChartCard
-            title="Atividade por Tema"
-            description="Quantidade de questões respondidas e corretas."
-          >
-            {activityData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={activityData}
-                  layout="vertical"
-                  margin={{ top: 20, right: 30, left: 80, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis
-                    dataKey="topic"
-                    type="category"
-                    width={120}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #ccc",
-                      borderRadius: "4px",
-                    }}
-                  />
-                  <Legend />
-                  <Bar
-                    dataKey="responded"
-                    name="Respondidas"
-                    fill={COLORS[1]}
-                  />
-                  <Bar dataKey="correct" name="Corretas" fill={COLORS[2]} />
-                </BarChart>
-              </ResponsiveContainer>
+      <Card>
+        <CardHeader>
+          <CardTitle>Questões por Dia</CardTitle>
+          <CardDescription>
+            {timeRange === "week"
+              ? "Quantidade de questões respondidas nos últimos 7 dias"
+              : timeRange === "month"
+                ? "Quantidade de questões respondidas no mês atual"
+                : timeRange === "30days"
+                  ? "Quantidade de questões respondidas nos últimos 30 dias"
+                  : "Quantidade de questões respondidas no ano atual"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {dailyChartData.length > 0 ? (
+            <ChartContainer config={dailyChartConfig}>
+              <BarChart data={dailyChartData}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Bar dataKey="count" fill="hsl(var(--chart-1))" radius={8} />
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-muted-foreground">
+                Nenhum dado disponível para exibição
+              </p>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="flex-col items-start gap-2 text-sm">
+          <div className="flex gap-2 font-medium leading-none">
+            {totals.today > 0 ? (
+              <>
+                {totals.today} questões hoje <TrendingUp className="h-4 w-4" />
+              </>
             ) : (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-muted-foreground">
-                  Nenhum dado disponível para exibição
-                </p>
-              </div>
+              "Nenhuma questão respondida hoje"
             )}
-          </ChartCard>
-        </TabsContent>
-      </Tabs>
+          </div>
+          <div className="leading-none text-muted-foreground">
+            {timeRange === "week"
+              ? "Mostrando o total de questões dos últimos 7 dias"
+              : timeRange === "month"
+                ? "Mostrando o total de questões do mês atual"
+                : timeRange === "30days"
+                  ? "Mostrando o total de questões dos últimos 30 dias"
+                  : "Mostrando o total de questões do ano atual"}
+          </div>
+        </CardFooter>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         <TopicRanking />

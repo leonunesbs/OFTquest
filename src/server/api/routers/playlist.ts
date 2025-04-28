@@ -5,8 +5,8 @@ import {
   updateUserTopicInteraction,
 } from "~/server/services/playlistService";
 
-import { z } from "zod";
 import { db } from "~/server/db";
+import { z } from "zod";
 
 export const playlistRouter = createTRPCRouter({
   // Get available topics
@@ -114,43 +114,66 @@ export const playlistRouter = createTRPCRouter({
   getUserTopicMetrics: protectedProcedure
     .input(
       z.object({
-        period: z.enum(["1A", "2A", "3A", "5A"]).default("5A"),
+        period: z.enum(["week", "month", "30days", "year"]).default("week"),
         examType: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
       try {
         const userId = ctx.session.user.id;
-        const currentYear = new Date().getFullYear();
-        const yearsAgo = parseInt(input.period);
+        const timeZone = "America/Sao_Paulo";
+        const today = new Date();
+        const todaySP = new Date(today.toLocaleString("en-US", { timeZone }));
+        todaySP.setHours(0, 0, 0, 0);
 
-        // Get user's topic interactions
+        // Calculate start date based on period
+        const startDate = (() => {
+          switch (input.period) {
+            case "week":
+              const lastSunday = new Date(todaySP);
+              lastSunday.setDate(todaySP.getDate() - todaySP.getDay());
+              return lastSunday;
+            case "month":
+              return new Date(todaySP.getFullYear(), todaySP.getMonth(), 1);
+            case "30days":
+              const thirtyDaysAgo = new Date(todaySP);
+              thirtyDaysAgo.setDate(todaySP.getDate() - 30);
+              return thirtyDaysAgo;
+            case "year":
+              return new Date(todaySP.getFullYear(), 0, 1);
+          }
+        })();
+
+        // Get user's topic interactions for the period
         const topicInteractions = await ctx.db.userTopicInteraction.findMany({
-          where: { userId },
-        });
-
-        // Get topic prevalences for the selected period
-        const topicPrevalences = await ctx.db.topicPrevalence.findMany({
           where: {
-            year: {
-              gte: currentYear - yearsAgo,
+            userId,
+            lastSeenAt: {
+              gte: startDate,
             },
-            examType: input.examType,
           },
         });
 
-        // Se não houver prevalências para o tipo de prova selecionado,
-        // buscar todas as prevalências e calcular a média ponderada
+        // Get topic prevalences for the period
+        const topicPrevalences = await ctx.db.topicPrevalence.findMany({
+          where: {
+            year: {
+              gte: startDate.getFullYear(),
+            },
+            ...(input.examType ? { examType: input.examType } : {}),
+          },
+        });
+
+        // If no prevalences found for the exam type, calculate weighted average
         if (topicPrevalences.length === 0 && input.examType) {
           const allPrevalences = await ctx.db.topicPrevalence.findMany({
             where: {
               year: {
-                gte: currentYear - yearsAgo,
+                gte: startDate.getFullYear(),
               },
             },
           });
 
-          // Agrupar por tema e calcular a média ponderada por tipo de prova
           const prevalenceByTopic = allPrevalences.reduce(
             (acc, tp) => {
               const current = acc[tp.topic] ?? { sum: 0, totalCount: 0 };
@@ -165,18 +188,17 @@ export const playlistRouter = createTRPCRouter({
             {} as Record<string, { sum: number; totalCount: number }>,
           );
 
-          // Calcular prevalência normalizada para cada tema
-          topicPrevalences.push(
-            ...Object.entries(prevalenceByTopic).map(([topic, data]) => ({
+          Object.entries(prevalenceByTopic).forEach(([topic, data]) => {
+            topicPrevalences.push({
               id: "",
               topic,
               examType: input.examType!,
-              year: currentYear,
+              year: todaySP.getFullYear(),
               count: data.totalCount,
               prevalence: data.totalCount > 0 ? data.sum / data.totalCount : 0,
               updatedAt: new Date(),
-            })),
-          );
+            });
+          });
         }
 
         // Calculate average prevalence for each topic
@@ -194,7 +216,8 @@ export const playlistRouter = createTRPCRouter({
           {} as Record<string, { sum: number; count: number }>,
         );
 
-        const result = topicInteractions.map((ti) => {
+        // Map interactions with their prevalences
+        return topicInteractions.map((ti) => {
           const topicPrevalence = topicPrevalenceMap[ti.topic];
           return {
             topic: ti.topic,
@@ -207,8 +230,6 @@ export const playlistRouter = createTRPCRouter({
               : 0,
           };
         });
-
-        return result;
       } catch (error) {
         console.error("Error in getUserTopicMetrics:", error);
         throw error;
@@ -278,6 +299,64 @@ export const playlistRouter = createTRPCRouter({
         ),
       },
     }));
+  }),
+
+  // Get daily question counts for the last 7 days
+  getUserDailyMetrics: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+    const timeZone = "America/Sao_Paulo";
+    const today = new Date();
+    const todaySP = new Date(today.toLocaleString("en-US", { timeZone }));
+    todaySP.setHours(0, 0, 0, 0);
+
+    // Get the last Sunday
+    const lastSunday = new Date(todaySP);
+    const dayOfWeek = todaySP.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    lastSunday.setDate(todaySP.getDate() - dayOfWeek);
+
+    // Get all playlist items responded since last Sunday
+    const playlistItems = await ctx.db.playlistItem.findMany({
+      where: {
+        playlist: {
+          userId,
+        },
+        respondedAt: {
+          gte: lastSunday,
+        },
+      },
+      select: {
+        respondedAt: true,
+      },
+    });
+
+    // Initialize array with 7 days starting from Sunday
+    const dailyCounts = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(lastSunday);
+      date.setDate(lastSunday.getDate() + i);
+      return {
+        date: date.toLocaleString("en-US", { timeZone }).split(",")[0],
+        count: 0,
+      };
+    });
+
+    // Count questions per day
+    playlistItems.forEach((item) => {
+      if (item.respondedAt) {
+        const itemDate = new Date(
+          item.respondedAt.toLocaleString("en-US", { timeZone }),
+        );
+        itemDate.setHours(0, 0, 0, 0);
+        const date = itemDate
+          .toLocaleString("en-US", { timeZone })
+          .split(",")[0];
+        const dayIndex = dailyCounts.findIndex((d) => d.date === date);
+        if (dayIndex !== -1) {
+          (dailyCounts[dayIndex] as { count: number }).count++;
+        }
+      }
+    });
+
+    return dailyCounts;
   }),
 });
 
