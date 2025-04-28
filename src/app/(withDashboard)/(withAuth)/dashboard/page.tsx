@@ -4,9 +4,9 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { HydrateClient, api } from "~/trpc/server";
 
 import DashboardClient from "~/components/DashboardClient";
-import { api } from "~/trpc/server";
 
 type Period = "week" | "month" | "last30days" | "year";
 
@@ -28,8 +28,9 @@ export default async function DashboardPage({
           </CardDescription>
         </CardHeader>
       </Card>
-
-      <DashboardClient metrics={metrics} />
+      <HydrateClient>
+        <DashboardClient metrics={metrics} />
+      </HydrateClient>
     </div>
   );
 }

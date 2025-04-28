@@ -12,6 +12,7 @@ import { Check } from "lucide-react";
 import { type Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CheckoutButton } from "~/components/CheckoutButton";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/server/auth";
@@ -208,11 +209,7 @@ export default async function Home() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <form action={createCheckoutSession} className="w-full">
-                  <Button type="submit" variant="default" className="w-full">
-                    Assinar Premium
-                  </Button>
-                </form>
+                <CheckoutButton />
               </CardFooter>
             </Card>
           </div>
