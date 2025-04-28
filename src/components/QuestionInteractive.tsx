@@ -138,7 +138,7 @@ export default function QuestionInteractive({
               progresso!
             </p>
             <Button asChild>
-              <Link href="/register">Cadastrar-se</Link>
+              <Link href="/login">Cadastrar-se</Link>
             </Button>
           </div>
         </div>
