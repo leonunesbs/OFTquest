@@ -273,25 +273,16 @@ export default function DashboardClient({
                 <Line
                   type="monotone"
                   dataKey="accuracy"
-                  stroke="#FFFFFF"
+                  stroke="hsl(var(--sidebar-foreground))"
                   strokeWidth={2}
                   dot={{
-                    fill: "#FFFFFF",
+                    fill: "hsl(var(--sidebar-foreground))",
                   }}
                   activeDot={{
                     r: 6,
+                    fill: "hsl(var(--sidebar-foreground))",
                   }}
-                >
-                  <LabelList
-                    position="top"
-                    offset={12}
-                    className="fill-foreground"
-                    fontSize={12}
-                    formatter={(value: number) =>
-                      `${(value * 100).toFixed(1)}%`
-                    }
-                  />
-                </Line>
+                ></Line>
               </LineChart>
             </ChartContainer>
           </CardContent>
