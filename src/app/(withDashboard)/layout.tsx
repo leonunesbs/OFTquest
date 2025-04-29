@@ -1,3 +1,4 @@
+import { LogIn, LogOut } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,14 +13,15 @@ import {
   SidebarTrigger,
 } from "~/components/ui/sidebar";
 
-import { LogOut } from "lucide-react";
+import { type Session } from "next-auth";
 import Link from "next/link";
 import { AppSidebar } from "~/components/AppSidebar";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
+import { auth } from "~/server/auth";
 
-function DashboardHeader() {
+function DashboardHeader({ session }: { session: Session | null }) {
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b px-2 sm:px-4 lg:px-8">
       <div className="flex items-center gap-2">
@@ -41,12 +43,21 @@ function DashboardHeader() {
       </div>
       <div className="ml-auto flex items-center gap-2">
         <ThemeToggle variant="single" />
-        <Button asChild variant="ghost" size="icon">
-          <Link href="/api/auth/signout">
-            <LogOut className="h-4 w-4" />
-            <span className="sr-only">Sair</span>
-          </Link>
-        </Button>
+        {session?.user ? (
+          <Button asChild variant="ghost" size="icon">
+            <Link href="/api/auth/signout">
+              <LogOut className="h-4 w-4" />
+              <span className="sr-only">Sair</span>
+            </Link>
+          </Button>
+        ) : (
+          <Button asChild variant="ghost" size="icon">
+            <Link href="/api/auth/signin">
+              <LogIn className="h-4 w-4" />
+              <span className="sr-only">Entrar</span>
+            </Link>
+          </Button>
+        )}
       </div>
     </header>
   );
@@ -60,12 +71,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await auth();
+
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <DashboardHeader />
+        <DashboardHeader session={session} />
         <DashboardContent>{children}</DashboardContent>
       </SidebarInset>
     </SidebarProvider>
