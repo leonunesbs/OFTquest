@@ -67,7 +67,7 @@ importers:
         version: 7.2.0
       '@t3-oss/env-nextjs':
         specifier: ^0.10.1
-        version: 0.10.1(typescript@5.7.3)(zod@3.24.1)
+        version: 0.10.1(typescript@5.7.3)(zod@3.25.67)
       '@tanstack/react-query':
         specifier: ^5.50.0
         version: 5.66.0(react@18.3.1)
@@ -202,7 +202,7 @@ importers:
         version: 0.1.2
       zod:
         specifier: ^3.24.1
-        version: 3.24.1
+        version: 3.25.67
     devDependencies:
       '@tailwindcss/typography':
         specifier: ^0.5.16
@@ -3344,6 +3344,7 @@ packages:
   node-domexception@1.0.0:
     resolution: {integrity: sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==}
     engines: {node: '>=10.5.0'}
+    deprecated: Use your platform's native DOMException instead
 
   node-fetch@3.3.2:
     resolution: {integrity: sha512-dRB78srN/l6gqWulah9SrxeYnxeddIG30+GOqK/9OlLVyLg3HPnr6SqOWTWOXKRwC2eGYCkZ59NNuSgvSrpgOA==}
@@ -4502,8 +4503,8 @@ packages:
     resolution: {integrity: sha512-cYVsTjKl8b+FrnidjibDWskAv7UKOfcwaVZdp/it9n1s9fU3IkgDbhdIRKCW4JDsAlECJY0ytoVPT3sK6kideA==}
     engines: {node: '>=18'}
 
-  zod@3.24.1:
-    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
+  zod@3.25.67:
+    resolution: {integrity: sha512-idA2YXwpCdqUSKRCACDE6ItZD9TZzy3OZMtpfLoh6oPR47lipysRrJfjzMqFxQ3uJuUPyUeWe1r9vLH33xO/Qw==}
 
 snapshots:
 
@@ -5821,16 +5822,16 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@t3-oss/env-core@0.10.1(typescript@5.7.3)(zod@3.24.1)':
+  '@t3-oss/env-core@0.10.1(typescript@5.7.3)(zod@3.25.67)':
     dependencies:
-      zod: 3.24.1
+      zod: 3.25.67
     optionalDependencies:
       typescript: 5.7.3
 
-  '@t3-oss/env-nextjs@0.10.1(typescript@5.7.3)(zod@3.24.1)':
+  '@t3-oss/env-nextjs@0.10.1(typescript@5.7.3)(zod@3.25.67)':
     dependencies:
-      '@t3-oss/env-core': 0.10.1(typescript@5.7.3)(zod@3.24.1)
-      zod: 3.24.1
+      '@t3-oss/env-core': 0.10.1(typescript@5.7.3)(zod@3.25.67)
+      zod: 3.25.67
     optionalDependencies:
       typescript: 5.7.3
 
@@ -8585,7 +8586,7 @@ snapshots:
       stringify-object: 5.0.0
       ts-morph: 18.0.0
       tsconfig-paths: 4.2.0
-      zod: 3.24.1
+      zod: 3.25.67
     transitivePeerDependencies:
       - '@types/node'
       - supports-color
@@ -9161,4 +9162,4 @@ snapshots:
 
   yoctocolors-cjs@2.1.2: {}
 
-  zod@3.24.1: {}
+  zod@3.25.67: {}
