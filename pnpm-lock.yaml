@@ -236,10 +236,10 @@ importers:
         version: 8.5.2
       prettier:
         specifier: ^3.3.2
-        version: 3.5.0
+        version: 3.6.1
       prettier-plugin-tailwindcss:
         specifier: ^0.6.5
-        version: 0.6.11(prettier@3.5.0)
+        version: 0.6.11(prettier@3.6.1)
       prisma:
         specifier: ^6.3.1
         version: 6.3.1(typescript@5.7.3)
@@ -3344,6 +3344,7 @@ packages:
   node-domexception@1.0.0:
     resolution: {integrity: sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==}
     engines: {node: '>=10.5.0'}
+    deprecated: Use your platform's native DOMException instead
 
   node-fetch@3.3.2:
     resolution: {integrity: sha512-dRB78srN/l6gqWulah9SrxeYnxeddIG30+GOqK/9OlLVyLg3HPnr6SqOWTWOXKRwC2eGYCkZ59NNuSgvSrpgOA==}
@@ -3682,8 +3683,8 @@ packages:
     engines: {node: '>=10.13.0'}
     hasBin: true
 
-  prettier@3.5.0:
-    resolution: {integrity: sha512-quyMrVt6svPS7CjQ9gKb3GLEX/rl3BCL2oa/QkNcXv4YNVBC9olt3s+H7ukto06q7B1Qz46PbrKLO34PR6vXcA==}
+  prettier@3.6.1:
+    resolution: {integrity: sha512-5xGWRa90Sp2+x1dQtNpIpeOQpTDBs9cZDmA/qs2vDNN2i18PdapqY7CmBeyLlMuGqXJRIOPaCaVZTLNQRWUH/A==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -8112,13 +8113,13 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-tailwindcss@0.6.11(prettier@3.5.0):
+  prettier-plugin-tailwindcss@0.6.11(prettier@3.6.1):
     dependencies:
-      prettier: 3.5.0
+      prettier: 3.6.1
 
   prettier@2.8.8: {}
 
-  prettier@3.5.0: {}
+  prettier@3.6.1: {}
 
   pretty-format@3.8.0: {}
 
