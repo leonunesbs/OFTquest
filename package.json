@@ -10,6 +10,11 @@
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
+    "db:setup": "npx tsx scripts/setup-db.ts",
+    "db:import": "npx tsx scripts/import-questions.ts",
+    "db:verify": "npx tsx scripts/verify-import.ts",
+    "db:full-import": "npx tsx scripts/full-import.ts",
+    "db:clean": "npx tsx prisma/clean-db.ts",
     "dev": "next dev --turbo",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
@@ -103,7 +108,7 @@
     "prisma": "^6.3.1",
     "tailwindcss": "^3.4.3",
     "tailwindcss-animate": "^1.0.7",
-    "tailwindcss-typography": "^3.1.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.5.3"
   },
   "ct3aMetadata": {
